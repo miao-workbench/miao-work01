@@ -1,0 +1,2952 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>妙妙的学习工作台</title>
+<style>
+  :root{
+    --bg:#FBF6EC;           /* 米白 */
+    --bg-2:#F3EBDA;         /* 燕麦 */
+    --ink:#2E241A;          /* 深棕 */
+    --ink-2:#5B4A38;        /* 中棕 */
+    --ink-3:#8A7863;        /* 浅棕 */
+    --line:#E7DDC8;         /* 分隔 */
+    --accent:#C57046;       /* 暖橘 */
+    --accent-2:#8C4A2A;
+    --card:#FFFDF7;
+    --success:#5C8A5D;
+    --danger:#B8503A;
+    --serif:'Songti SC','PingFang SC','Noto Serif SC','Source Han Serif SC','SimSun',ui-serif,serif;
+    --sans:'PingFang SC','Helvetica Neue',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  body{min-height:100vh;display:flex;}
+  a{color:var(--accent-2);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  button{cursor:pointer;font-family:inherit;}
+  input,textarea,select{font-family:inherit;color:var(--ink);}
+  ::selection{background:#F1D8B3;color:var(--ink)}
+
+  /* Sidebar */
+  aside.side{
+    width:220px;flex:none;background:var(--bg-2);border-right:1px solid var(--line);
+    padding:28px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;
+  }
+  .brand{font-family:var(--serif);font-size:22px;line-height:1.35;letter-spacing:1px;color:var(--ink);margin-bottom:6px;}
+  .brand small{display:block;font-family:var(--sans);font-size:11px;color:var(--ink-3);letter-spacing:2px;margin-top:4px;font-weight:normal;}
+  .today{font-size:12px;color:var(--ink-3);margin:8px 0 22px 0;}
+  nav.tabs{display:flex;flex-direction:column;gap:2px;}
+  nav.tabs button{
+    text-align:left;background:transparent;border:none;padding:10px 12px;border-radius:8px;
+    color:var(--ink-2);font-size:15px;display:flex;gap:10px;align-items:center;transition:background .15s;
+  }
+  nav.tabs button:hover{background:#EADFC7;}
+  nav.tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(60,40,20,.08);}
+  nav.tabs .ic{font-size:16px;width:20px;text-align:center;}
+  .side .foot{margin-top:auto;font-size:12px;color:var(--ink-3);line-height:1.7;}
+  .side .foot button{background:transparent;border:1px solid var(--line);color:var(--ink-2);padding:6px 10px;border-radius:6px;margin-right:6px;margin-top:6px;font-size:12px;}
+  .side .foot button:hover{background:#fff;}
+  .side .foot .backup-note{margin-top:6px;padding:6px 10px;border-radius:6px;background:#F3ECDA;border:1px solid var(--line);color:var(--ink-2);font-size:11px;line-height:1.5;display:none;}
+  .side .foot .backup-note.warn{background:#F9E5D0;border-color:#D9A574;color:#6E3A12;}
+  .side .foot .backup-note.on{display:block;}
+
+  /* Status bar (footer) */
+  .statusbar{
+    position:fixed;left:220px;right:0;bottom:0;height:32px;
+    background:rgba(244,236,220,.94);backdrop-filter:blur(6px);
+    border-top:1px solid var(--line);
+    display:flex;align-items:center;gap:16px;
+    padding:0 20px;font-size:11.5px;color:var(--ink-3);
+    letter-spacing:.3px;z-index:20;
+  }
+  .statusbar .sb-item{display:inline-flex;align-items:center;gap:5px;}
+  .statusbar .sb-item b{color:var(--ink-2);font-weight:500;}
+  .statusbar .sb-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block;}
+  .statusbar .sb-dot.ok{background:#7A9A7C;}
+  .statusbar .sb-dot.warn{background:#D9A574;}
+  .statusbar .sb-dot.bad{background:var(--danger);}
+  .statusbar .sb-sep{width:1px;height:14px;background:var(--line);}
+  .statusbar .sb-spacer{flex:1;}
+  .statusbar .sb-btn{
+    background:transparent;border:1px solid var(--line);color:var(--ink-2);
+    padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;
+  }
+  .statusbar .sb-btn:hover{background:#fff;}
+  main{padding-bottom:56px !important;}
+
+  /* Command palette (Cmd+K) */
+  .cmdk-mask{
+    position:fixed;inset:0;background:rgba(46,36,26,.35);display:none;
+    justify-content:center;align-items:flex-start;padding-top:12vh;z-index:120;
+  }
+  .cmdk-mask.on{display:flex;}
+  .cmdk{
+    width:min(640px,92vw);background:var(--card);border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 24px 70px rgba(46,36,26,.28);overflow:hidden;
+    font-family:var(--sans);
+  }
+  .cmdk input{
+    width:100%;border:none;outline:none;padding:16px 20px;font-size:16px;
+    background:transparent;color:var(--ink);border-bottom:1px solid var(--line);
+  }
+  .cmdk-hint{padding:6px 20px;font-size:11px;color:var(--ink-3);border-bottom:1px solid var(--line);background:var(--bg-2);letter-spacing:.3px;}
+  .cmdk-hint kbd{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:var(--sans);font-size:10.5px;color:var(--ink-2);margin:0 2px;}
+  .cmdk-list{max-height:52vh;overflow-y:auto;padding:6px 0;}
+  .cmdk-empty{padding:24px 20px;text-align:center;color:var(--ink-3);font-size:13px;}
+  .cmdk-item{
+    display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;
+    font-size:13.5px;color:var(--ink);border-left:3px solid transparent;
+  }
+  .cmdk-item.on{background:#F3ECDA;border-left-color:var(--accent);}
+  .cmdk-item .cmdk-badge{
+    flex:none;font-size:10.5px;letter-spacing:.5px;padding:2px 7px;border-radius:4px;
+    background:var(--bg-2);color:var(--ink-3);border:1px solid var(--line);min-width:56px;text-align:center;
+  }
+  .cmdk-item .cmdk-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cmdk-item .cmdk-sub{flex:none;font-size:11.5px;color:var(--ink-3);max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cmdk-item mark{background:#F1D8B3;color:var(--ink);padding:0 1px;border-radius:2px;}
+  .cmdk-group{
+    padding:4px 20px;font-size:10.5px;color:var(--ink-3);letter-spacing:1px;
+    text-transform:uppercase;margin-top:2px;
+  }
+
+  /* Main */
+  main{flex:1;padding:36px 44px 80px 44px;max-width:1180px;}
+  h1.page{font-family:var(--serif);font-size:30px;margin:0 0 4px 0;letter-spacing:1px;}
+  .page-sub{color:var(--ink-3);font-size:13px;margin-bottom:26px;}
+  .row{display:flex;gap:16px;flex-wrap:wrap;}
+  .col{flex:1;min-width:0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;}
+  .card h3{margin:0 0 10px 0;font-family:var(--serif);font-size:18px;letter-spacing:.5px;color:var(--ink);}
+  .card .desc{color:var(--ink-3);font-size:13px;margin-bottom:12px;}
+  .pill{display:inline-block;background:var(--bg-2);color:var(--ink-2);border-radius:999px;padding:2px 10px;font-size:12px;margin-right:6px;margin-bottom:4px;}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;
+    padding:8px 14px;border-radius:8px;font-size:13px;transition:opacity .15s;
+  }
+  .btn:hover{opacity:.9;}
+  .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line);}
+  .btn.ghost:hover{background:var(--bg-2);}
+  .btn.small{padding:5px 10px;font-size:12px;border-radius:6px;}
+  .btn.link{background:transparent;color:var(--accent-2);padding:4px 6px;text-decoration:underline;}
+  .btn.danger{background:transparent;color:var(--danger);border:1px solid #E9C4B8;}
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+  .field label{font-size:12px;color:var(--ink-3);}
+  .field input,.field textarea,.field select{
+    background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:14px;
+    width:100%;
+  }
+  .field textarea{min-height:80px;resize:vertical;}
+  .grid{display:grid;gap:12px;}
+  .grid.c2{grid-template-columns:1fr 1fr;}
+  .grid.c3{grid-template-columns:repeat(3,1fr);}
+  .grid.c4{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:900px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr;}}
+
+  /* Sub tabs */
+  .subtabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:2px;flex-wrap:wrap;}
+  .subtabs button{
+    background:transparent;border:none;padding:9px 14px;border-radius:6px 6px 0 0;color:var(--ink-3);
+    font-size:14px;border-bottom:2px solid transparent;margin-bottom:-2px;
+  }
+  .subtabs button.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:500;}
+  .subtabs button:hover{color:var(--ink-2);}
+
+  /* Quote card */
+  .quote{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:10px;
+    position:relative;
+  }
+  .quote .q-text{font-family:var(--serif);font-size:15px;line-height:1.75;color:var(--ink);margin-bottom:8px;white-space:pre-wrap;}
+  .quote .q-meta{font-size:12px;color:var(--ink-3);}
+  .quote .q-note{font-size:13px;color:var(--ink-2);border-top:1px dashed var(--line);padding-top:8px;margin-top:8px;line-height:1.7;}
+  .quote .q-actions{position:absolute;top:12px;right:12px;display:none;gap:6px;}
+  .quote:hover .q-actions{display:flex;}
+
+  /* Kanban file item */
+  .file-item{
+    display:flex;justify-content:space-between;align-items:center;padding:10px 12px;
+    background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;
+  }
+  .file-item .fi-main{flex:1;}
+  .file-item .fi-name{font-size:14px;color:var(--ink);margin-bottom:2px;}
+  .file-item .fi-tag{font-size:11px;color:var(--ink-3);}
+
+  /* Modal */
+  .modal-mask{
+    position:fixed;inset:0;background:rgba(46,36,26,.35);display:none;align-items:center;justify-content:center;z-index:99;
+    padding:20px;
+  }
+  .modal-mask.on{display:flex;}
+  .modal{
+    background:var(--card);border-radius:14px;padding:26px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+    box-shadow:0 20px 60px rgba(46,36,26,.2);
+  }
+  .modal h3{font-family:var(--serif);margin:0 0 4px 0;font-size:20px;}
+  .modal .desc{color:var(--ink-3);font-size:13px;margin-bottom:16px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}
+
+  /* Trending */
+  .trend-src{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;}
+  .trend-src .t-main{flex:1;}
+  .trend-src .t-name{font-size:15px;color:var(--ink);margin-bottom:2px;}
+  .trend-src .t-desc{font-size:12px;color:var(--ink-3);}
+
+  /* Knowledge block */
+  .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
+  .know h4{margin:0 0 6px 0;font-family:var(--serif);font-size:16px;color:var(--ink);}
+  .know p{margin:6px 0;font-size:13px;color:var(--ink-2);line-height:1.75;}
+
+  /* Reveal */
+  .hidden{display:none !important;}
+
+  /* Empty */
+  .empty{text-align:center;color:var(--ink-3);font-size:13px;padding:24px 12px;background:var(--bg-2);border-radius:10px;font-style:italic;}
+
+  /* Bookshelf big button */
+  .big-cta{
+    display:flex;align-items:center;justify-content:space-between;padding:22px 26px;
+    background:linear-gradient(135deg,#F5E5C8,#EFD2A8);border-radius:14px;color:var(--ink);
+    text-decoration:none;transition:transform .15s;
+  }
+  .big-cta:hover{transform:translateY(-2px);text-decoration:none;}
+  .big-cta .cta-title{font-family:var(--serif);font-size:20px;margin-bottom:4px;}
+  .big-cta .cta-sub{font-size:13px;color:var(--ink-2);}
+  .big-cta .arrow{font-size:22px;color:var(--accent-2);}
+
+  /* Bookshelf grid */
+  .shelf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:20px 16px;margin-top:8px;}
+  .book-card{cursor:pointer;display:flex;flex-direction:column;align-items:stretch;position:relative;transition:transform .15s;}
+  .book-card:hover{transform:translateY(-3px);}
+  .book-cover{width:100%;aspect-ratio:2/3;border-radius:6px;overflow:hidden;box-shadow:0 4px 12px rgba(46,36,26,.18),0 1px 3px rgba(46,36,26,.12);background:#EADDCA;display:flex;align-items:flex-end;justify-content:center;position:relative;}
+  .book-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+  .book-cover.gen{padding:14px;background:linear-gradient(135deg,var(--gen-a,#C8A97A),var(--gen-b,#8C5E36));color:#FFF7E7;}
+  .book-cover.gen .gen-title{font-family:var(--serif);font-size:15px;line-height:1.3;text-align:center;width:100%;letter-spacing:1px;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.15);}
+  .book-status-badge{position:absolute;top:6px;right:6px;background:rgba(255,253,247,.94);color:var(--ink-2);font-size:10px;padding:2px 8px;border-radius:999px;letter-spacing:.5px;}
+  .book-status-badge.reading{background:var(--accent);color:#fff;}
+  .book-status-badge.done{background:var(--success);color:#fff;}
+  .book-status-badge.wish{background:var(--bg-2);color:var(--ink-3);}
+  .book-title{margin-top:10px;font-size:13px;color:var(--ink);line-height:1.4;text-align:center;font-family:var(--serif);padding:0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .book-author{margin-top:2px;font-size:11px;color:var(--ink-3);text-align:center;}
+  .book-quotes-count{margin-top:2px;font-size:11px;color:var(--accent-2);text-align:center;}
+  .book-add{border:2px dashed var(--line);border-radius:6px;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;transition:all .15s;font-size:32px;font-weight:200;background:transparent;}
+  .book-add:hover{border-color:var(--accent);color:var(--accent);background:#FFFDF7;}
+  .book-add-label{text-align:center;font-size:12px;color:var(--ink-3);margin-top:10px;}
+
+  /* Book detail modal (wider) */
+  .modal.wide{max-width:820px;}
+  .book-detail{display:grid;grid-template-columns:200px 1fr;gap:26px;}
+  @media(max-width:720px){.book-detail{grid-template-columns:1fr;}}
+  .bd-cover{width:200px;aspect-ratio:2/3;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(46,36,26,.2);align-self:start;background:#EADDCA;}
+  .bd-cover img{width:100%;height:100%;object-fit:cover;}
+  .bd-cover.gen{display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,var(--gen-a,#C8A97A),var(--gen-b,#8C5E36));color:#FFF7E7;font-family:var(--serif);font-size:20px;line-height:1.3;text-align:center;letter-spacing:1px;}
+  .bd-title{font-family:var(--serif);font-size:22px;margin:0 0 4px 0;}
+  .bd-meta{font-size:13px;color:var(--ink-3);margin-bottom:12px;line-height:1.7;}
+  .bd-meta .pill{margin-right:4px;}
+  .bd-section{margin-top:16px;}
+  .bd-section h4{font-family:var(--serif);font-size:15px;margin:0 0 8px 0;color:var(--ink);display:flex;justify-content:space-between;align-items:center;}
+  .bd-section .core{background:#FDF8EC;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:var(--ink-2);white-space:pre-wrap;min-height:60px;}
+  .bd-section .core.empty-core{color:var(--ink-3);font-style:italic;}
+  .bd-quotes .quote{margin-bottom:8px;padding:12px 14px;}
+  .bd-quotes .quote .q-text{font-size:14px;line-height:1.7;}
+  .bd-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+
+  /* Fate profile grid */
+  .fate-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s;}
+  .fate-card:hover{box-shadow:0 3px 10px rgba(60,40,20,.08);}
+  .fate-card .fname{font-family:var(--serif);font-size:16px;color:var(--ink);}
+  .fate-card .fmeta{font-size:12px;color:var(--ink-3);margin-bottom:6px;}
+  .fate-card .fnote{font-size:13px;color:var(--ink-2);line-height:1.7;white-space:pre-wrap;}
+  .fate-card .fauto{font-size:13px;color:var(--ink-2);line-height:1.75;margin-top:6px;}
+  .fate-card .fauto .kv{display:inline-block;margin-right:14px;}
+  .fate-card .fauto .kv b{color:var(--accent-2);}
+
+  /* Fate detail */
+  .fate-detail{padding:6px 4px;}
+  .fate-detail h2{font-family:var(--serif);font-size:24px;margin:0 0 4px 0;letter-spacing:1px;}
+  .fate-detail .subline{color:var(--ink-3);font-size:13px;margin-bottom:16px;}
+  .fate-block{background:#FBF7EE;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+  .fate-block h4{margin:0 0 8px 0;font-family:var(--serif);font-size:16px;letter-spacing:.5px;color:var(--ink);}
+  .fate-block p{margin:4px 0;font-size:13px;color:var(--ink-2);line-height:1.75;}
+  .fate-block .row-kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;font-size:13px;}
+  .fate-block .row-kv span{color:var(--ink-3);}
+  .fate-block .row-kv b{color:var(--ink);font-weight:500;}
+  .fate-narrative{background:linear-gradient(to bottom,#FBF7EE,#F6EFDC);}
+  .fate-narrative p{font-size:14px;line-height:1.85;color:var(--ink);margin:6px 0;}
+  .fate-narrative p b{color:var(--ink);font-weight:600;}
+  .bazi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;margin:8px 0 4px 0;}
+  .bazi-cell{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 6px;}
+  .bazi-cell .label{font-size:11px;color:var(--ink-3);margin-bottom:4px;}
+  .bazi-cell .gz{font-family:var(--serif);font-size:22px;color:var(--accent-2);letter-spacing:2px;}
+  .bazi-cell .wx{font-size:11px;color:var(--ink-3);margin-top:4px;}
+  .wuxing-bar{display:flex;gap:6px;margin-top:8px;height:22px;border-radius:4px;overflow:hidden;background:#EEE7D6;}
+  .wuxing-bar .seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;letter-spacing:1px;}
+  .wx-金{background:#B48A5A;} .wx-木{background:#7A9C6E;} .wx-水{background:#5F7E97;}
+  .wx-火{background:#B76049;} .wx-土{background:#A88C6C;}
+  .disclaimer{font-size:11px;color:var(--ink-3);font-style:italic;margin-top:12px;padding:8px 12px;background:#F5EEDD;border-radius:6px;}
+  .req{color:var(--accent);}
+
+  /* Media hot list */
+  .hot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .hot-head h3{margin:0;}
+  .hot-actions{display:flex;gap:8px;align-items:center;}
+  .hot-time{font-size:11px;color:var(--ink-3);}
+  .hot-list{display:flex;flex-direction:column;gap:8px;}
+  .hot-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:8px;transition:border-color .15s;}
+  .hot-item:hover{border-color:var(--accent);}
+  .hot-idx{font-family:var(--serif);font-size:16px;color:var(--accent);width:22px;flex:none;text-align:center;line-height:1.6;}
+  .hot-body{flex:1;min-width:0;}
+  .hot-title{font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:3px;}
+  .hot-meta{font-size:12px;color:var(--ink-3);}
+  .hot-meta .pill{background:var(--bg-2);color:var(--ink-2);border-radius:999px;padding:1px 8px;font-size:11px;margin-right:6px;}
+  .hot-item .adopt{flex:none;padding:4px 8px;font-size:11px;background:transparent;color:var(--ink-3);border:1px solid var(--line);border-radius:6px;cursor:pointer;}
+  .hot-item .adopt:hover{color:var(--accent);border-color:var(--accent);}
+  .hot-details{margin-top:14px;font-size:12px;color:var(--ink-3);}
+  .hot-details summary{cursor:pointer;padding:6px 0;color:var(--ink-3);font-size:12px;}
+  .hot-details summary:hover{color:var(--accent-2);}
+
+  /* Wenwan svg thumb */
+  .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .know h4{margin:0 0 6px 0;font-family:var(--serif);font-size:16px;}
+  .know p{margin:4px 0 0 0;font-size:13px;color:var(--ink-2);line-height:1.75;white-space:pre-wrap;}
+  .know-with-svg{display:flex;gap:14px;align-items:flex-start;}
+  .know-with-svg .know-svg{flex:none;width:72px;height:72px;background:radial-gradient(circle at 32% 28%,#FFF7E4,#EBDDBA 70%,#C9B78F 100%);border-radius:10px;padding:6px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 2px rgba(255,255,255,.7),inset 0 -3px 6px rgba(60,40,20,.15),0 1px 2px rgba(60,40,20,.1);position:relative;overflow:hidden;}
+  .know-with-svg .know-svg::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.55),transparent 55%);pointer-events:none;}
+  .know-with-svg .know-svg::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 12px rgba(60,40,20,.18);border-radius:10px;pointer-events:none;}
+  .know-with-svg .know-svg svg{width:100%;height:100%;position:relative;z-index:1;}
+  /* 材质滤镜分层 —— 让 SVG 按大类呈现不同的光影/纹理感 */
+  .know-svg.mat-菩提 svg{filter:drop-shadow(0 1px 1px rgba(60,40,10,.35)) contrast(1.05) saturate(1.08);}
+  .know-svg.mat-竹木 svg{filter:drop-shadow(0 1px 1px rgba(60,30,10,.4)) contrast(1.1) sepia(.15);}
+  .know-svg.mat-玉石 svg{filter:drop-shadow(0 1px 2px rgba(20,40,60,.25)) brightness(1.05) saturate(1.15);}
+  .know-svg.mat-金属 svg{filter:drop-shadow(0 1px 1px rgba(20,20,20,.5)) brightness(1.08) contrast(1.15);}
+  .know-svg.mat-绳串 svg{filter:drop-shadow(0 1px 1px rgba(60,40,10,.3));}
+  .know-svg.mat-香道 svg{filter:drop-shadow(0 1px 1px rgba(60,20,10,.35)) sepia(.2);}
+  .know-svg.mat-盘玩心法 svg,.know-svg.mat-其他 svg{filter:drop-shadow(0 1px 1px rgba(60,40,10,.25));}
+  /* 光斑高光：金属最强，玉石中等，木/菩提轻 */
+  .know-svg.mat-金属::before{background:radial-gradient(ellipse at 28% 22%,rgba(255,255,255,.85),transparent 45%);}
+  .know-svg.mat-玉石::before{background:radial-gradient(ellipse at 30% 24%,rgba(255,255,255,.65),transparent 55%);}
+  .know-svg.mat-竹木::before,.know-svg.mat-菩提::before{background:radial-gradient(ellipse at 32% 26%,rgba(255,247,220,.55),transparent 60%);}
+  .know-body{flex:1;min-width:0;}
+
+  /* Filter */
+  .filter-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+  .filter-bar .chip{background:var(--bg-2);color:var(--ink-2);padding:5px 12px;border-radius:999px;font-size:12px;border:none;}
+  .filter-bar .chip.on{background:var(--accent);color:#fff;}
+  .filter-bar input.search{flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<aside class="side">
+  <div class="brand">妙妙的学习工作台<small id="today-sub">HELLO</small></div>
+  <nav class="tabs" id="mainTabs">
+    <button data-tab="reading" class="active"><span class="ic">✦</span> 读书</button>
+    <button data-tab="work"><span class="ic">✦</span> 工作</button>
+    <button data-tab="media"><span class="ic">✦</span> 自媒体</button>
+    <button data-tab="mystic"><span class="ic">✦</span> 玄学</button>
+    <button data-tab="wenwan"><span class="ic">✦</span> 文玩</button>
+  </nav>
+  <div class="foot">
+    <div>数据保存在本机浏览器</div>
+    <div id="backupNote" class="backup-note"></div>
+    <button onclick="exportAll()">导出备份</button>
+    <button onclick="importAll()">导入备份</button>
+    <button onclick="openCloudSync()" class="ghost-btn">云端同步</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+    <div style="margin-top:10px;font-size:11px;color:var(--ink-3);line-height:1.6;">
+      快捷键：<b>⌘K</b> 搜索 · <b>1-5</b> 切标签 · <b>⌘B</b> 备份
+    </div>
+  </div>
+</aside>
+
+<main id="main">
+  <!-- 读书 -->
+  <section data-pane="reading">
+    <h1 class="page">读书</h1>
+    <div class="page-sub">书架里点封面看这本书的核心观点和划线；金句本按主题横跨全部书。</div>
+
+    <a class="big-cta" href="https://weread.qq.com/" target="_blank" rel="noopener">
+      <div>
+        <div class="cta-title">进入微信读书书架</div>
+        <div class="cta-sub">在网页端划线读书，回来这里把这本书加进书架并整理关键句。</div>
+      </div>
+      <div class="arrow">→</div>
+    </a>
+
+    <div class="subtabs" id="readingSubtabs" style="margin-top:20px;">
+      <button data-rd-tab="shelf" class="active">书架</button>
+      <button data-rd-tab="quotes">金句本</button>
+    </div>
+
+    <!-- 书架 -->
+    <div data-rd-pane="shelf">
+      <div class="filter-bar">
+        <button class="chip on" data-st="全部" onclick="filterBooks('全部',this)">全部</button>
+        <button class="chip" data-st="在读" onclick="filterBooks('在读',this)">在读</button>
+        <button class="chip" data-st="已读" onclick="filterBooks('已读',this)">已读</button>
+        <button class="chip" data-st="想读" onclick="filterBooks('想读',this)">想读</button>
+        <input class="search" id="bSearch" oninput="renderShelf()" placeholder="搜书名 / 作者" />
+      </div>
+      <div id="shelfGrid" class="shelf-grid"></div>
+    </div>
+
+    <!-- 金句本 -->
+    <div data-rd-pane="quotes" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="font-family:var(--serif);margin:0;">金句本 · 跨书主题分类</h3>
+        <button class="btn" onclick="openQuoteModal()">＋ 记一句</button>
+      </div>
+      <div class="filter-bar" id="quoteTopicChips">
+        <!-- 自动根据金句数据生成 -->
+      </div>
+      <div class="filter-bar" style="margin-top:-6px;">
+        <input class="search" id="qSearch" oninput="renderQuotes()" placeholder="搜书名 / 作者 / 关键词" />
+      </div>
+      <div id="quotesList"></div>
+    </div>
+  </section>
+
+  <!-- 工作 -->
+  <section data-pane="work" class="hidden">
+    <h1 class="page">工作</h1>
+    <div class="page-sub">行业站点 · 项目站点。刷新按钮不登录你的任何账号，只打开公开来源。</div>
+
+    <div class="subtabs" id="workSubtabs">
+      <button data-work-tab="industry" class="active">行业站点</button>
+      <button data-work-tab="project">项目站点</button>
+    </div>
+
+    <div data-work-pane="industry">
+      <div class="subtabs" id="industrySubtabs">
+        <button data-ind="玩具" class="active">🧸 玩具</button>
+        <button data-ind="宠物">🐾 宠物</button>
+        <button data-ind="个护家清">🧴 个护家清</button>
+        <button data-ind="美妆">💄 美妆</button>
+      </div>
+      <div id="industryBody"></div>
+    </div>
+
+    <div data-work-pane="project" class="hidden">
+      <div class="subtabs" id="projectSubtabs">
+        <button data-pj="正版IP" class="active">正版IP</button>
+        <button data-pj="联营计划">联营计划</button>
+      </div>
+      <div id="projectBody"></div>
+    </div>
+  </section>
+
+  <!-- 自媒体 -->
+  <section data-pane="media" class="hidden">
+    <h1 class="page">自媒体</h1>
+    <div class="page-sub">左小红书、右抖音，各自 top15 热门选题一键刷新。<b>不区分来源、不登录账号</b>。看到有感觉的直接一键存进选题库。</div>
+
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <div class="hot-head">
+            <h3>小红书 · 热门选题 Top 15</h3>
+            <div class="hot-actions">
+              <span class="hot-time" id="xhsRefreshedAt"></span>
+              <button class="btn small ghost" onclick="importHotJSON('xhs')">导入</button>
+              <button class="btn small" onclick="refreshHot('xhs')">↻ 一键刷新</button>
+            </div>
+          </div>
+          <div class="hot-list" id="xhsHotList"></div>
+          <details class="hot-details">
+            <summary>更多深挖入口</summary>
+            <div id="xhsSources"></div>
+          </details>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="hot-head">
+            <h3>抖音 · 热门选题 Top 15</h3>
+            <div class="hot-actions">
+              <span class="hot-time" id="dyRefreshedAt"></span>
+              <button class="btn small ghost" onclick="importHotJSON('dy')">导入</button>
+              <button class="btn small" onclick="refreshHot('dy')">↻ 一键刷新</button>
+            </div>
+          </div>
+          <div class="hot-list" id="dyHotList"></div>
+          <details class="hot-details">
+            <summary>更多深挖入口</summary>
+            <div id="dySources"></div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="margin:0;">选题灵感库</h3>
+        <button class="btn" onclick="openIdeaModal()">＋ 记一个选题</button>
+      </div>
+      <div class="filter-bar">
+        <button class="chip on" data-plat="全部" onclick="filterIdeas('全部',this)">全部</button>
+        <button class="chip" data-plat="小红书" onclick="filterIdeas('小红书',this)">小红书</button>
+        <button class="chip" data-plat="抖音" onclick="filterIdeas('抖音',this)">抖音</button>
+        <button class="chip" data-plat="通用" onclick="filterIdeas('通用',this)">通用</button>
+        <input class="search" id="iSearch" oninput="renderIdeas()" placeholder="搜标题 / 标签" />
+      </div>
+      <div id="ideasList"></div>
+    </div>
+  </section>
+
+  <!-- 玄学 -->
+  <section data-pane="mystic" class="hidden">
+    <h1 class="page">玄学</h1>
+    <div class="page-sub">星座 · 星盘 · 生辰 · 八字 · 紫微，一边学一边给自己和朋友立档。</div>
+
+    <div class="subtabs" id="mysticSubtabs">
+      <button data-my-tab="knowledge" class="active">知识点</button>
+      <button data-my-tab="profiles">命理档案</button>
+    </div>
+
+    <div data-my-pane="knowledge">
+      <div class="subtabs" id="mysticKnowSubtabs" style="border:none;flex-wrap:wrap;">
+        <button data-cat="星座" class="active">星座</button>
+        <button data-cat="星盘">星盘</button>
+        <button data-cat="生辰">生辰</button>
+        <button data-cat="八字">八字</button>
+        <button data-cat="紫微">紫微</button>
+        <button data-cat="易经">易经</button>
+        <button data-cat="五行">五行</button>
+        <button data-cat="风水">风水</button>
+        <button data-cat="命理杂谈">命理杂谈</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+        <button class="btn small" onclick="openKnowModal('mystic')">＋ 加一条知识点</button>
+      </div>
+      <div id="mysticKnowledgeBody"></div>
+    </div>
+
+    <div data-my-pane="profiles" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="desc" style="margin:0;">给自己或朋友立档，方便反复复盘。</div>
+        <button class="btn" onclick="openFateModal()">＋ 立一个档</button>
+      </div>
+      <div id="fateList"></div>
+    </div>
+  </section>
+
+  <!-- 文玩 -->
+  <section data-pane="wenwan" class="hidden">
+    <h1 class="page">文玩</h1>
+    <div class="page-sub">分类整理各种文玩的基础知识、鉴别要点、把玩心得。</div>
+    <div class="subtabs" id="wenwanSubtabs" style="border:none;flex-wrap:wrap;">
+      <button data-cat="菩提" class="active">菩提</button>
+      <button data-cat="竹木">竹木</button>
+      <button data-cat="玉石">玉石</button>
+      <button data-cat="金属">金属</button>
+      <button data-cat="绳串">绳串</button>
+      <button data-cat="香道">香道</button>
+      <button data-cat="盘玩心法">盘玩心法</button>
+      <button data-cat="其他">其他</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <button class="btn small" onclick="openKnowModal('wenwan')">＋ 加一条知识点</button>
+    </div>
+    <div id="wenwanBody"></div>
+  </section>
+
+</main>
+
+<!-- ===== Command palette (Cmd/Ctrl+K) ===== -->
+<div class="cmdk-mask" id="cmdkMask">
+  <div class="cmdk" role="dialog" aria-label="全局搜索">
+    <input id="cmdkInput" placeholder="搜书、金句、选题、命理、文玩…（Enter 打开 · ↑↓ 选择 · Esc 关闭）" autocomplete="off" />
+    <div class="cmdk-hint">
+      <kbd>1</kbd>-<kbd>5</kbd> 切换标签 · <kbd>⌘K</kbd> 打开搜索 · <kbd>⌘B</kbd> 一键备份 · <kbd>Esc</kbd> 关闭
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+  </div>
+</div>
+
+<!-- ===== Footer status bar ===== -->
+<div class="statusbar" id="statusBar">
+  <span class="sb-item" title="书架">📚 <b id="sbBooks">0</b></span>
+  <span class="sb-item" title="金句">✍️ <b id="sbQuotes">0</b></span>
+  <span class="sb-item" title="选题">💡 <b id="sbIdeas">0</b></span>
+  <span class="sb-item" title="命理知识">☯︎ <b id="sbMystic">0</b></span>
+  <span class="sb-item" title="命理档案">📜 <b id="sbFate">0</b></span>
+  <span class="sb-item" title="文玩">🪷 <b id="sbWenwan">0</b></span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><span id="sbStorageDot" class="sb-dot"></span><span id="sbStorage">— KB</span></span>
+  <span class="sb-spacer"></span>
+  <span class="sb-item"><span id="sbBackupDot" class="sb-dot"></span><span id="sbBackup">尚未备份</span></span>
+  <button class="sb-btn" onclick="exportAll()">导出</button>
+</div>
+
+<!-- ===== Modals ===== -->
+<div class="modal-mask" id="bookModal">
+  <div class="modal">
+    <h3 id="bmTitle">加一本书</h3>
+    <div class="desc">封面可以从微信读书/豆瓣的书籍详情页右键复制图片链接。留空会自动生成一个渐变封面。</div>
+    <div class="field"><label>书名</label><input id="bTitle" /></div>
+    <div class="field"><label>作者</label><input id="bAuthor" /></div>
+    <div class="field"><label>封面 URL（可选）</label><input id="bCover" placeholder="https://... 留空自动生成" /></div>
+    <div class="grid c2">
+      <div class="field"><label>出版社</label><input id="bPublisher" /></div>
+      <div class="field"><label>出版年</label><input id="bYear" placeholder="2024" /></div>
+    </div>
+    <div class="grid c2">
+      <div class="field"><label>状态</label>
+        <select id="bStatus"><option>想读</option><option>在读</option><option>已读</option></select>
+      </div>
+      <div class="field"><label>阅读进度（%）</label><input id="bProgress" type="number" min="0" max="100" value="0" /></div>
+    </div>
+    <div class="field"><label>核心观点（可以先留空，之后再补）</label><textarea id="bCore" placeholder="书里最打动我的核心观点，2-3 句话讲清楚。"></textarea></div>
+    <div class="field"><label>我的备注</label><textarea id="bNote" placeholder="为什么想读 / 谁推荐的 / 想拿它解决什么问题"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('bookModal')">取消</button>
+      <button class="btn" onclick="saveBook()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="bookDetailModal">
+  <div class="modal wide" id="bookDetailBody"></div>
+</div>
+
+<div class="modal-mask" id="quoteModal">
+  <div class="modal">
+    <h3 id="qmTitle">记一句金句</h3>
+    <div class="desc">从微信读书划线里抄过来，或者临时想到的句子都可以。</div>
+    <div class="field"><label>原文</label><textarea id="qText" placeholder="把句子粘贴在这里"></textarea></div>
+    <div class="field"><label>关联到书架里的哪本书（可选）</label>
+      <select id="qBookId"><option value="">— 不关联 —</option></select>
+    </div>
+    <div class="grid c2">
+      <div class="field"><label>书名（若上面没选）</label><input id="qBook" /></div>
+      <div class="field"><label>作者</label><input id="qAuthor" /></div>
+    </div>
+    <div class="field"><label>主题（可自由填写；已有主题会自动补全）</label>
+      <input id="qTopic" list="qTopicList" placeholder="成长 / 职场 / 内观 / 自定义…" />
+      <datalist id="qTopicList"></datalist>
+    </div>
+    <div class="field"><label>我的想法（可选）</label><textarea id="qNote" placeholder="为什么被打动 / 我想怎么用"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('quoteModal')">取消</button>
+      <button class="btn" onclick="saveQuote()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="fileModal">
+  <div class="modal">
+    <h3 id="fmTitle">添加一个文件</h3>
+    <div class="desc">这里只登记「文件条目」（名字+位置+说明），点击可以直接打开。<br>可以填本地路径（<code>file:///Users/...</code>）或者云端链接。</div>
+    <div class="field"><label>文件名 / 标题</label><input id="fName" placeholder="例：2026Q2 玩具行业月报.pdf" /></div>
+    <div class="field"><label>类型</label>
+      <select id="fType">
+        <option>行研报告</option><option>行业资讯</option><option>竞品分析</option>
+        <option>会议记录</option><option>合同/协议</option><option>项目文档</option>
+        <option>数据/表格</option><option>灵感/杂记</option><option>其他</option>
+      </select>
+    </div>
+    <div class="field"><label>链接（可选）</label><input id="fLink" placeholder="file:///Users/... 或 https://..." /></div>
+    <div class="field"><label>备注</label><textarea id="fNote" placeholder="核心结论 / 存放位置 / 使用方式"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="fileCtx=null;closeModal('fileModal')">取消</button>
+      <button class="btn" onclick="saveFile()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="ideaModal">
+  <div class="modal">
+    <h3 id="imTitle">记一个选题</h3>
+    <div class="desc">看到公开热榜里有感觉的方向，或者自己脑洞出来的，都记这里。</div>
+    <div class="field"><label>标题</label><input id="iTitle" placeholder="例：作为1688选品人，我们内部真的会挑这些款" /></div>
+    <div class="grid c2">
+      <div class="field"><label>平台</label>
+        <select id="iPlat"><option>小红书</option><option>抖音</option><option>通用</option></select>
+      </div>
+      <div class="field"><label>优先级</label>
+        <select id="iPrio"><option>P0 · 本周发</option><option>P1 · 本月发</option><option>P2 · 补充</option><option>P3 · 灵感池</option></select>
+      </div>
+    </div>
+    <div class="field"><label>标签（逗号分隔）</label><input id="iTag" placeholder="1688,选品,产业带" /></div>
+    <div class="field"><label>钩子 / 展开思路</label><textarea id="iNote" placeholder="第一句怎么写 / 图集怎么排 / 想串哪个故事"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="editingIdeaId=null;closeModal('ideaModal')">取消</button>
+      <button class="btn" onclick="saveIdea()">保存</button>
+    </div>
+  </div>
+</div><div class="modal-mask" id="knowModal">
+  <div class="modal">
+    <h3 id="kmTitle">加一条知识点</h3>
+    <div class="desc"></div>
+    <div class="field"><label>标题</label><input id="kTitle" placeholder="例：紫微斗数十二宫概览" /></div>
+    <div class="field"><label>分类</label><input id="kCat" placeholder="例：紫微 / 菩提" readonly /></div>
+    <div class="field"><label>内容（支持换行）</label><textarea id="kBody" placeholder="要点、口诀、案例、参考链接"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('knowModal')">取消</button>
+      <button class="btn" onclick="saveKnow()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="fateModal">
+  <div class="modal">
+    <h3 id="fateModalTitle">立一个命理档案</h3>
+    <div class="desc">填基础信息就行，工作台会自动帮你算出星座/生肖/八字/紫微等。<br><b>本地简化算法，仅供参考</b>；精确排盘请用「测测」「占星之门」等专业工具。</div>
+    <div class="grid c2">
+      <div class="field"><label>姓名 / 昵称</label><input id="pName" placeholder="妙妙 / 小 A" /></div>
+      <div class="field"><label>关系</label>
+        <select id="pRelation"><option>本人</option><option>朋友</option><option>家人</option><option>同事</option><option>其他</option></select>
+      </div>
+    </div>
+    <div class="grid c2">
+      <div class="field"><label>性别</label>
+        <select id="pGender"><option>女</option><option>男</option><option>其他</option></select>
+      </div>
+      <div class="field"><label>阳历生日 <span class="req">*</span></label><input id="pDate" type="date" /></div>
+    </div>
+    <div class="grid c2">
+      <div class="field"><label>出生时间</label><input id="pTime" type="time" /></div>
+      <div class="field"><label>出生地</label><input id="pPlace" placeholder="杭州" /></div>
+    </div>
+    <div class="field"><label>关键笔记（可选）</label><textarea id="pNote" placeholder="性格倾向 / 近期运势 / 想给她的建议 / 我自己的复盘"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('fateModal')">取消</button>
+      <button class="btn" onclick="saveFate()">保存并生成命理</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="fateDetailModal">
+  <div class="modal wide" id="fateDetailBody"></div>
+</div>
+
+<!-- ===== 云端同步（GitHub Gist） ===== -->
+<div class="modal-mask" id="cloudSyncModal">
+  <div class="modal" style="max-width:560px;">
+    <h3>☁ 云端同步 · GitHub Gist</h3>
+    <div class="desc" style="line-height:1.7;">
+      用一个 <b>secret Gist</b>（私密 Gist）在多个设备之间同步。
+      Token 与 Gist ID 只保存在本地浏览器，不上传到任何服务器。
+      <br>👉 <a href="https://github.com/settings/tokens?type=beta" target="_blank">创建 Fine-grained Token</a>
+      时勾选 <b>Gists · Read and write</b> 权限（其他一律不勾）。
+    </div>
+    <div class="field">
+      <label>GitHub Token（<code>github_pat_...</code>）</label>
+      <input id="cldToken" type="password" autocomplete="off" placeholder="仅存本地，不上传" />
+    </div>
+    <div class="field">
+      <label>Gist ID（首次留空 → 点"创建新 Gist"）</label>
+      <input id="cldGistId" autocomplete="off" placeholder="例如：a1b2c3d4e5f6..." />
+    </div>
+    <div id="cldStatus" style="margin:8px 0 12px 0;padding:8px 10px;background:var(--bg-2);border-radius:6px;font-size:12px;color:var(--ink-2);line-height:1.7;"></div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:6px;">
+      <button class="btn ghost" onclick="closeModal('cloudSyncModal')">关闭</button>
+      <button class="btn ghost" onclick="cloudCreateGist()">创建新 Gist</button>
+      <button class="btn ghost" onclick="cloudDownload()">⬇ 从云端下载</button>
+      <button class="btn" onclick="cloudUpload()">⬆ 上传到云端</button>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--ink-3);line-height:1.6;">
+      提示：切换设备时，先在这台设备"上传"，再在另一台设备"下载"。若两边都有改动，请先各自导出 JSON 做本地备份。
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========================================================================
+   数据层：全部存在 localStorage，键名 miao_workbench_v1
+   ======================================================================== */
+const KEY = 'miao_workbench_v1';
+const seed = {
+  books: [
+    {id:'b1',title:'日本式衰退：不增长时代的全景避坑指南',author:'',cover:'https://cdn.weread.qq.com/weread/cover/81/cpplatform_5fgcfrknyoqpnzgpggplwc/t6_cpplatform_5fgcfrknyoqpnzgpggplwc1781495653.jpg',reader:'https://weread.qq.com/web/reader/e6d327e0813abb97dg0177e7',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b2',title:'八字命理学教程（全三册）：手把手教你从入门到精通',author:'',cover:'https://cdn.weread.qq.com/weread/cover/33/cpplatform_6dmbn1aj5dllbmajfj573e/t6_cpplatform_6dmbn1aj5dllbmajfj573e1782458689.jpg',reader:'https://weread.qq.com/web/reader/e8b32fc0813abba83g01087d',status:'在读',progress:20,coreView:'',note:'系统学八字底层。',ts:Date.now()},
+    {id:'b3',title:'毛泽东选集（全四卷）',author:'毛泽东',cover:'https://cdn.weread.qq.com/weread/cover/84/3300024284/t6_3300024284.jpg',reader:'https://weread.qq.com/web/reader/2bb32ff0813ab6ffcg014315',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b4',title:'禅者的初心',author:'铃木俊隆',cover:'https://cdn.weread.qq.com/weread/cover/81/cpplatform_4xcmuctghyfeokzgv7xucg/t6_cpplatform_4xcmuctghyfeokzgv7xucg1778663230.jpg',reader:'https://weread.qq.com/web/reader/41b324e0813abb6a8g01965b',status:'在读',progress:40,coreView:'',note:'',ts:Date.now()},
+    {id:'b5',title:'100个人生遗愿',author:'',cover:'https://cdn.weread.qq.com/weread/cover/36/cpplatform_eczdfhkgvgag81k1bgzmp5/t6_cpplatform_eczdfhkgvgag81k1bgzmp51774580018.jpg',reader:'https://weread.qq.com/web/reader/f4d32800813abb46ag013359',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b6',title:'巧克力与佛（节选）',author:'',cover:'https://cdn.weread.qq.com/weread/cover/65/cpplatform_gz59zmcfcbscfayagd4xeg/t6_cpplatform_gz59zmcfcbscfayagd4xeg1775616351.jpg',reader:'https://weread.qq.com/web/reader/35232e40813abb4d1g019fad',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b7',title:'《历史的温度》系列全7册',author:'张玮',cover:'https://cdn.weread.qq.com/weread/cover/66/cpplatform_eq3479z7rfd4rotsyzsbb1/t6_cpplatform_eq3479z7rfd4rotsyzsbb11684227941.jpg',reader:'https://weread.qq.com/web/reader/c3c323c0813ab7d85g013e27',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b8',title:'简单致富：实现财务自由与富足人生的路线图',author:'JL·柯林斯',cover:'https://cdn.weread.qq.com/weread/cover/46/cpplatform_vqcegcdissgyqguzg3kfun/t6_cpplatform_vqcegcdissgyqguzg3kfun1736159005.jpg',reader:'https://weread.qq.com/web/reader/c3f32970813ab9918g01643e',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b9',title:'独自生活（微信读书特别版）',author:'',cover:'https://cdn.weread.qq.com/weread/cover/13/cpplatform_k37hu7serfqtzzusnsf2fu/t6_cpplatform_k37hu7serfqtzzusnsf2fu1775731818.jpg',reader:'https://weread.qq.com/web/reader/cdd325d0813abb4f7g013dfd',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b10',title:'历史中的大与小（微信读书特别版）',author:'',cover:'https://cdn.weread.qq.com/weread/cover/80/cpplatform_kufrnpnuf1ncgpboi8fbm2/t6_cpplatform_kufrnpnuf1ncgpboi8fbm21775787290.jpg',reader:'https://weread.qq.com/web/reader/fa432da0813abb4bfg0198ad',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b11',title:'因为独特',author:'',cover:'https://cdn.weread.qq.com/weread/cover/51/cpplatform_kpcvfc9xioodwjmixijx7b/t6_cpplatform_kpcvfc9xioodwjmixijx7b1732268418.jpg',reader:'https://weread.qq.com/web/reader/55e32900813ab9640g017ec0',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b12',title:'和这个世界讲讲道理：智识分子2020s',author:'万维钢',cover:'https://cdn.weread.qq.com/weread/cover/74/cpplatform_7yozvijpbk7kgdhxz3uatj/t6_cpplatform_7yozvijpbk7kgdhxz3uatj1680257126.jpg',reader:'https://weread.qq.com/web/reader/a2a32990813ab7bb4g0118b4',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b13',title:'一生的旅程：迪士尼CEO自述',author:'罗伯特·艾格',cover:'https://wfqqreader-1252317822.image.myqcloud.com/cover/548/30966548/t6_30966548.jpg',reader:'https://weread.qq.com/web/reader/f12326b071d88314f12ac8e',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b14',title:'秦吏',author:'七月新番',cover:'https://wfqqreader-1252317822.image.myqcloud.com/cover/497/21097497/t6_21097497.jpg',reader:'https://weread.qq.com/web/reader/49b320107141ec1949b4a4e',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b15',title:'金瓯缺：全四卷（茅盾文学奖获奖作品全集：典藏版）',author:'徐兴业',cover:'https://cdn.weread.qq.com/weread/cover/85/cpplatform_v7zksabrgm6jgfbuk745pm/t6_cpplatform_v7zksabrgm6jgfbuk745pm1763021058.jpg',reader:'https://weread.qq.com/web/reader/23a32c60813ababb2g014b83',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b16',title:'蝶变：澳门博彩业田野叙事',author:'',cover:'https://wfqqreader-1252317822.image.myqcloud.com/cover/472/24217472/t6_24217472.jpg',reader:'https://weread.qq.com/web/reader/2f332dc0717187802f3a1ba',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b17',title:'豆包AI赚钱手册',author:'',cover:'https://cdn.weread.qq.com/weread/cover/67/cpplatform_waesuppvmv37eaxnfkruzj/t6_cpplatform_waesuppvmv37eaxnfkruzj1770710688.jpg',reader:'https://weread.qq.com/web/reader/b9b32b80813abb2ceg011ecd',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b18',title:'周易说什么',author:'',cover:'https://cdn.weread.qq.com/weread/cover/0/cpplatform_bfbrmycnpcwfeqmd7siijw/t6_cpplatform_bfbrmycnpcwfeqmd7siijw1754969708.jpg',reader:'https://weread.qq.com/web/reader/9d632660813aba3f4g01716a',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b19',title:'基层中国的运行逻辑',author:'',cover:'https://cdn.weread.qq.com/weread/cover/53/cpplatform_87r3hfnmxvzuktnqpotfwv/t6_cpplatform_87r3hfnmxvzuktnqpotfwv1770028475.jpg',reader:'https://weread.qq.com/web/reader/df032030813abb26ag011e59',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b20',title:'不要担心2小时和8公里以外的事情',author:'',cover:'https://cdn.weread.qq.com/weread/cover/31/cpplatform_7uy2tcmvutzrkj82wvxviu/t6_cpplatform_7uy2tcmvutzrkj82wvxviu1761804278.jpg',reader:'https://weread.qq.com/web/reader/14132cf0813abaa05g015d6e',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b21',title:'全情投入：人生最重要的事',author:'吉姆·洛尔',cover:'https://cdn.weread.qq.com/weread/cover/88/cpplatform_pyrqfyzphfgwggvajhlxrk/t6_cpplatform_pyrqfyzphfgwggvajhlxrk1692327193.jpg',reader:'https://weread.qq.com/web/reader/51e32070813ab810eg0193b6',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b22',title:'识人九段',author:'',cover:'https://cdn.weread.qq.com/weread/cover/16/cpplatform_tp6tyu1se1fcref8dcsnqb/t6_cpplatform_tp6tyu1se1fcref8dcsnqb1758082717.jpg',reader:'https://weread.qq.com/web/reader/63d32810813aba6e7g017aa2',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b23',title:'我才不想做家务（全网剖析隐形家务最彻底的一本书！）',author:'',cover:'https://cdn.weread.qq.com/weread/cover/20/cpplatform_tn6cu9pp4yraw8iecaxp9x/t6_cpplatform_tn6cu9pp4yraw8iecaxp9x1753236152.jpg',reader:'https://weread.qq.com/web/reader/800329f0813ab9643g0180bf',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b24',title:'如何快速了解一个行业',author:'',cover:'https://cdn.weread.qq.com/weread/cover/10/cpplatform_sg3znank75by5ydmb6p7sj/t6_cpplatform_sg3znank75by5ydmb6p7sj1756275316.jpg',reader:'https://weread.qq.com/web/reader/4a1321f0813aba52eg011a0a',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b25',title:'解闷儿：张辰亮散文集',author:'张辰亮',cover:'https://cdn.weread.qq.com/weread/cover/11/cpplatform_py97rtz5q9xrshuer7gzvo/t6_cpplatform_py97rtz5q9xrshuer7gzvo1763620079.jpg',reader:'https://weread.qq.com/web/reader/70a32080813abac49g010f9a',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b26',title:'九诗心：暗夜里的文学启明',author:'',cover:'https://cdn.weread.qq.com/weread/cover/88/cpplatform_anc6zhep6apm2o1gtjwc1p/t6_cpplatform_anc6zhep6apm2o1gtjwc1p1746516406.jpg',reader:'https://weread.qq.com/web/reader/f7e32280813ab9eb3g015d98',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b27',title:'消失的多巴胺：为什么你越来越不快乐？',author:'',cover:'https://cdn.weread.qq.com/weread/cover/53/cpplatform_17mvy8lorfcsnvxcugfdyk/t6_cpplatform_17mvy8lorfcsnvxcugfdyk1732268758.jpg',reader:'https://weread.qq.com/web/reader/de1326c0813ab9641g0144d7',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b28',title:'娱乐至死',author:'尼尔·波兹曼',cover:'https://wfqqreader-1252317822.image.myqcloud.com/cover/833/855833/t6_855833.jpg',reader:'https://weread.qq.com/web/reader/aef326f05d0f19aef085d2b',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b29',title:'周易的野心（微信读书特别版）',author:'',cover:'https://cdn.weread.qq.com/weread/cover/62/cpplatform_gmv7kumdupg2pnfd8ou2jg/t6_cpplatform_gmv7kumdupg2pnfd8ou2jg1764905997.jpg',reader:'https://weread.qq.com/web/reader/4c5329c0813abad75g019050',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b30',title:'周易有答案：人真的能算出自己的命运吗？',author:'',cover:'https://cdn.weread.qq.com/weread/cover/45/cpplatform_3rteucv8twge5ztoss95g4/t6_cpplatform_3rteucv8twge5ztoss95g41765276734.jpg',reader:'https://weread.qq.com/web/reader/04a328d0813abae60g019c38',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b31',title:'在里山种地',author:'',cover:'https://cdn.weread.qq.com/weread/cover/5/cpplatform_58frde27c2eei5xnhzngkd/t6_cpplatform_58frde27c2eei5xnhzngkd1761817576.jpg',reader:'https://weread.qq.com/web/reader/29a327d0813aba7e3g012650',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b32',title:'哲学一下就有好事发生',author:'',cover:'https://cdn.weread.qq.com/weread/cover/13/cpplatform_dejck7dtn6yrggbwmhfebb/t6_cpplatform_dejck7dtn6yrggbwmhfebb1692949317.jpg',reader:'https://weread.qq.com/web/reader/3ab325a0813ab817ag018f1a',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b33',title:'小红书爆款规律',author:'',cover:'https://cdn.weread.qq.com/weread/cover/44/cpplatform_cbcz4hqrfldvk5xvco5dul/t6_cpplatform_cbcz4hqrfldvk5xvco5dul1761214981.jpg',reader:'https://weread.qq.com/web/reader/104320b0813aba975g014530',status:'在读',progress:30,coreView:'',note:'工作要用。',ts:Date.now()},
+    {id:'b34',title:'洛克菲勒给子女的一生忠告',author:'',cover:'https://rescdn.qqmail.com/weread/cover/150/3300003150/t6_3300003150.jpg',reader:'https://weread.qq.com/web/reader/dd932660813ab67bbg01032c',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b35',title:'段永平投资实战',author:'',cover:'https://cdn.weread.qq.com/weread/cover/90/cpplatform_jnn8gy5ng92kkc8imvse3z/t6_cpplatform_jnn8gy5ng92kkc8imvse3z1759040243.jpg',reader:'https://weread.qq.com/web/reader/47a32f40813aba7c0g017283',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b36',title:'允许爱情消失',author:'',cover:'https://cdn.weread.qq.com/weread/cover/71/cpplatform_hdfhq8fukgwdmrzldfodxy/t6_cpplatform_hdfhq8fukgwdmrzldfodxy1748574405.jpg',reader:'https://weread.qq.com/web/reader/a3132f70813ab9fd0g011f1a',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b37',title:'爱的五种语言',author:'盖瑞·查普曼',cover:'https://cdn.weread.qq.com/weread/cover/84/cpplatform_cs1rjysvneq3fi2r5q9oue/t6_cpplatform_cs1rjysvneq3fi2r5q9oue1701933444.jpg',reader:'https://weread.qq.com/web/reader/dcd32a30813ab8607g013ca6',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b38',title:'布鲁克林有棵树',author:'贝蒂·史密斯',cover:'https://cdn.weread.qq.com/weread/cover/50/cpplatform_n67cpmdj8da94n5e9vhc2p/t6_cpplatform_n67cpmdj8da94n5e9vhc2p1713337689.jpg',reader:'https://weread.qq.com/web/reader/6fd327b0813ab8bd5g010680',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b39',title:'2049：未来10000天的可能',author:'',cover:'https://cdn.weread.qq.com/weread/cover/69/cpplatform_ftvzmdf1yxwhfrpnjrrvnj/t6_cpplatform_ftvzmdf1yxwhfrpnjrrvnj1751445133.jpg',reader:'https://weread.qq.com/web/reader/bdd325d0813aba18dg0142a8',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b40',title:'我在西南联大的日子',author:'汪曾祺',cover:'https://cdn.weread.qq.com/weread/cover/51/cpplatform_brqzhvdgkmpqyxaa6f7yyo/t6_cpplatform_brqzhvdgkmpqyxaa6f7yyo1680859340.jpg',reader:'https://weread.qq.com/web/reader/75732a50813ab7be6g0121ac',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b41',title:'慢读孙子兵法',author:'',cover:'https://cdn.weread.qq.com/weread/cover/25/cpplatform_5avvmzsxjx5xf5uduw9wmr/t6_cpplatform_5avvmzsxjx5xf5uduw9wmr1756723787.jpg',reader:'https://weread.qq.com/web/reader/72732e40813aba573g017bb7',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b42',title:'杨振宁传：规范与对称之美',author:'江才健',cover:'https://cdn.weread.qq.com/weread/cover/46/cpplatform_nrbytznmtmzskstem5aoq7/t6_cpplatform_nrbytznmtmzskstem5aoq71681961860.jpg',reader:'https://weread.qq.com/web/reader/4de32520813ab7c7dg0102c1',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b43',title:'阿城文集之一：棋王树王孩子王',author:'阿城',cover:'https://rescdn.qqmail.com/weread/cover/347/3300004347/t6_3300004347.jpg',reader:'https://weread.qq.com/web/reader/37032620813ab6832g017f6b',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b44',title:'万物有趣：汪曾祺散文集',author:'汪曾祺',cover:'https://cdn.weread.qq.com/weread/cover/0/YueWen_34780105/t6_YueWen_34780105.jpg',reader:'https://weread.qq.com/web/reader/93c321007212b3c993c59ff',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b45',title:'主场',author:'',cover:'https://cdn.weread.qq.com/weread/cover/83/cpplatform_qcm6ax8zadyhk3bb9kxpbn/t6_cpplatform_qcm6ax8zadyhk3bb9kxpbn1750820893.jpg',reader:'https://weread.qq.com/web/reader/4b0327d0813aba12ag0167ed',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b46',title:'明朝那些事儿（全集）',author:'当年明月',cover:'https://cdn.weread.qq.com/weread/cover/97/yuewen_822995/t6_yuewen_8229951695023669.jpg',reader:'https://weread.qq.com/web/reader/a57325c05c8ed3a57224187',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b47',title:'段永平投资问答录（全两册）',author:'段永平',cover:'https://cdn.weread.qq.com/weread/cover/41/cpplatform_6gfm6m2adcnjvyirrzcmex/t6_cpplatform_6gfm6m2adcnjvyirrzcmex1748340410.jpg',reader:'https://weread.qq.com/web/reader/38e32c00813ab9f99g0102af',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b48',title:'《金刚经》说什么',author:'南怀瑾',cover:'https://cdn.weread.qq.com/weread/cover/87/YueWen_22791651/t6_YueWen_22791651.jpg',reader:'https://weread.qq.com/web/reader/e5832360715bc5e3e581083',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b49',title:'俗女养成记（同名影视原著）',author:'江鹅',cover:'https://cdn.weread.qq.com/weread/cover/90/3300011890/t6_3300011890.jpg',reader:'https://weread.qq.com/web/reader/d2932250813ab6b25g010b64',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b50',title:'桃花源没事儿',author:'',cover:'https://cdn.weread.qq.com/weread/cover/13/cpplatform_3gn7abh5vn4enmll5zfhai/t6_cpplatform_3gn7abh5vn4enmll5zfhai1756264952.jpg',reader:'https://weread.qq.com/web/reader/676320b0813aba52cg0179ad',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+  ],
+  quotes: [
+    {id:'q1',text:'把脑子里乱七八糟的想法，变成有结构的文字。不管有没有人看，写完了，我就比昨天更清楚了一点。',book:'又是一年618（公众号自摘）',author:'互联网女英雄',topic:'成长',note:'我的写作原点，贴给自己每天看一眼。',bookId:null,ts:Date.now()},
+    {id:'q2',text:'一切皆销售——无论卖广告、卖产品，还是向上汇报。',book:'又是一年618（公众号自摘）',author:'互联网女英雄',topic:'职场',note:'不要羞于包装自己。',bookId:null,ts:Date.now()},
+    {id:'q3',text:'人类维系关系的痛苦，大多来自于我们会要求别人，试图改变别人。',book:'又是一年618（公众号自摘）',author:'互联网女英雄',topic:'关系',note:'常常提醒自己「觉知」。',bookId:null,ts:Date.now()},
+  ],
+  work:{
+    industry:{
+      '玩具':{sources:[
+          {name:'玩具产业新观察',url:'https://www.baidu.com/s?wd=%E7%8E%A9%E5%85%B7%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:'百度搜"玩具行业报告 2026"'},
+          {name:'中国玩具和婴童用品协会',url:'https://www.tjpaa.org/',note:'官方协会站'},
+          {name:'亿邦动力·玩具',url:'https://www.ebrun.com/toy/',note:'电商视角行业新闻'},
+        ],files:[]},
+      '宠物':{sources:[
+          {name:'宠物行业白皮书检索',url:'https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E5%AE%A0%E7%89%A9%E8%A1%8C%E4%B8%9A%E7%99%BD%E7%9A%AE%E4%B9%A6',note:'年度白皮书'},
+          {name:'派读宠物行业大数据',url:'https://www.petdata.cn/',note:'国内领先宠物行业数据平台'},
+          {name:'亿邦动力·宠物',url:'https://www.ebrun.com/pet/',note:''},
+        ],files:[]},
+      '个护家清':{sources:[
+          {name:'CBNData 家清个护',url:'https://www.cbndata.com/',note:'第一财经商业数据中心'},
+          {name:'个护家清行业检索',url:'https://www.baidu.com/s?wd=%E4%B8%AA%E6%8A%A4%E5%AE%B6%E6%B8%85%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:''},
+        ],files:[]},
+      '美妆':{sources:[
+          {name:'聚美丽',url:'https://www.jumeili.cn/',note:'化妆品行业头部媒体'},
+          {name:'青眼',url:'https://www.qingyanwang.com.cn/',note:'美妆产业媒体'},
+          {name:'亿邦动力·美妆',url:'https://www.ebrun.com/beauty/',note:''},
+        ],files:[]},
+    },
+    project:{
+      '正版IP':{files:[],desc:'IP 授权 · 联名 · 版权合作。文件条目记在这里方便一览。'},
+      '联营计划':{files:[],desc:'联营招商 · 服务商 · 品牌孵化项目。'},
+    }
+  },
+  media:{
+    xhsHot:[
+      {id:'xh1',title:'小红书电商618复盘：中腰部博主GMV首次反超头部',tag:'行业观察',hint:'适合切"我作为1688选品人怎么看这个信号"'},
+      {id:'xh2',title:'2026暑期宠物用品爆款榜：降温冰垫/水陆两栖玩具',tag:'宠物',hint:'产业带视角有独家优势'},
+      {id:'xh3',title:'家清博主涨粉密码：从"晒战绩"到"晒流程"',tag:'个护家清',hint:'切工厂视频+老板娘做家清的差异化'},
+      {id:'xh4',title:'国货美妆大爆发：珂莱欧/花洛莉亚618增速TOP',tag:'美妆',hint:'国货背后都在1688找ODM'},
+      {id:'xh5',title:'办公室穿搭：一件白衬衫的10种系法',tag:'职场女性',hint:'轻松不费素材'},
+      {id:'xh6',title:'29岁未婚女青年的年中反思',tag:'成长',hint:'跟你的"上半年复盘"选题正对味'},
+      {id:'xh7',title:'玩具工厂开箱：一个盲盒模型的诞生',tag:'玩具',hint:'产业带幕后向内容，稀缺'},
+      {id:'xh8',title:'夏日精油/香薰选择指南',tag:'个护',hint:'个护类扩展话题'},
+      {id:'xh9',title:'618之后的第一个爆款：情绪毛绒玩具',tag:'玩具',hint:'成人解压玩具赛道'},
+      {id:'xh10',title:'我在阿里的第X年：写给毕业季学妹的话',tag:'职场',hint:'年中节点+身份自带流量'},
+      {id:'xh11',title:'一杯咖啡的时间读一本书：25本能一小时啃完的书单',tag:'读书',hint:'跟读书板块可打通'},
+      {id:'xh12',title:'内观日记：我怎么用觉察抵抗周三emo',tag:'内观',hint:'你自己人设最贴的方向'},
+      {id:'xh13',title:'杭州家养仓鼠拍照打卡地图',tag:'宠物·地域',hint:'杭州本地话题+宠物'},
+      {id:'xh14',title:'闻香识料：新中式香道入门',tag:'文玩',hint:'跟你文玩板块可打通'},
+      {id:'xh15',title:'紫微命宫解读合集，你是哪种主星命',tag:'玄学',hint:'跟你玄学板块可打通'},
+    ],
+    dyHot:[
+      {id:'dh1',title:'工厂老板娘的一天vlog（1688源头厂）',tag:'产业带',hint:'原厂视角+女性视角，稀缺'},
+      {id:'dh2',title:'618复盘：你不知道的宠物赛道黑马',tag:'宠物',hint:'数据+故事双结构'},
+      {id:'dh3',title:'小家电爆款背后的10个ODM工厂',tag:'家电家清',hint:'链接到你的1688资源'},
+      {id:'dh4',title:'原创国货美妆开箱：99元怎么选到大牌平替',tag:'美妆',hint:'性价比向内容长盛不衰'},
+      {id:'dh5',title:'"我在阿里做到P7"系列（真实职场对话）',tag:'职场',hint:'职场类爆款模板'},
+      {id:'dh6',title:'一个29岁女生的深夜独白：我不想回消息了',tag:'情绪',hint:'内观向+情绪价值'},
+      {id:'dh7',title:'玩具产品经理的选品笔记',tag:'玩具',hint:'把工作变成内容'},
+      {id:'dh8',title:'夏日露营装备清单：小众品牌盘点',tag:'户外',hint:'夏季应季'},
+      {id:'dh9',title:'我给我爸妈布置了1688同款极简家',tag:'个护家清',hint:'家庭+性价比+故事'},
+      {id:'dh10',title:'8字命理硬核入门：从零看懂自己的命盘',tag:'玄学',hint:'跟命理档案可打通'},
+      {id:'dh11',title:'读书博主怎么做知识付费转化',tag:'读书·商业',hint:'跟读书板块打通'},
+      {id:'dh12',title:'"整理术"再进化：三层收纳法',tag:'家清',hint:'家清赛道细分方向'},
+      {id:'dh13',title:'宠物急救包必备清单',tag:'宠物',hint:'实用向、复用性高'},
+      {id:'dh14',title:'国货香水入夏新品盘点',tag:'美妆·香水',hint:'夏季应季+平替视角'},
+      {id:'dh15',title:'"打工人复盘"话题热度回升',tag:'职场·话题',hint:'年中节点+情绪共振'},
+    ],
+    refreshedAt:{xhs:'',dy:''},
+    xhsSources:[
+      {name:'小红书发现页（未登录访客）',url:'https://www.xiaohongshu.com/explore',note:'匿名浏览，作为深挖入口'},
+      {name:'新红·小红书数据',url:'https://xh.newrank.cn/',note:'第三方榜单'},
+      {name:'千瓜数据 · 热门榜',url:'https://www.qian-gua.com/',note:'第三方分析'},
+    ],
+    dySources:[
+      {name:'抖音热榜官方',url:'https://www.douyin.com/hot',note:'公开热榜'},
+      {name:'蝉妈妈抖音榜',url:'https://www.chanmama.com/',note:'第三方榜单'},
+      {name:'新抖',url:'https://xd.newrank.cn/',note:'第三方数据'},
+    ],
+    ideas:[],
+  },
+  mystic:{
+    knowledge:{
+      '星座':[
+        {id:'k1',title:'太阳/月亮/上升三要素',body:'太阳＝对外人格 · 月亮＝内在情绪与安全感 · 上升＝他人第一印象/身体气质。看人先看这三个，比只看太阳准得多。'},
+        {id:'k2',title:'四象与四相性格',body:'火（白羊/狮子/射手）＝行动 · 土（金牛/处女/摩羯）＝稳固 · 风（双子/天秤/水瓶）＝思考 · 水（巨蟹/天蝎/双鱼）＝感受。'},
+        {id:'k2a',title:'三方星座（本位/固定/变动）',body:'本位（白羊·巨蟹·天秤·摩羯）＝开创，掌起头。固定（金牛·狮子·天蝎·水瓶）＝坚守，掌完成。变动（双子·处女·射手·双鱼）＝调整，掌转型。'},
+        {id:'k2b',title:'阴阳性星座',body:'阳性（火+风）主动外向，阴性（土+水）内敛务实。看整个盘阳性多的人偏"生成"型，阴性多的人偏"承接"型。'},
+        {id:'k2c',title:'守护星速记',body:'白羊-火星 · 金牛/天秤-金星 · 双子/处女-水星 · 巨蟹-月亮 · 狮子-太阳 · 天蝎-冥王/火星 · 射手-木星 · 摩羯-土星 · 水瓶-天王/土星 · 双鱼-海王/木星。'},
+        {id:'k2d',title:'风向与情感需求',body:'火需要意义感、土需要安全感、风需要新鲜感、水需要联结感。伴侣间对方需求跟你不同象，不是不爱是不同频。'},
+        {id:'k2e',title:'太阳落陷/入庙简读',body:'太阳在狮子最强、水瓶最弱；月亮在巨蟹最强、摩羯最弱。星曜进入陷落宫位，本能会削弱、要靠后天补课。'},
+      ],
+      '星盘':[
+        {id:'k3',title:'十二宫概览',body:'1自我 · 2金钱 · 3沟通 · 4家庭 · 5恋爱创造 · 6工作健康 · 7伴侣 · 8深度合作/性/生死 · 9远方哲学 · 10事业名声 · 11朋友社群 · 12潜意识。'},
+        {id:'k4',title:'相位入门',body:'合相0° 融合 · 六分60° 顺畅 · 拱120° 天赋 · 刑90° 挑战 · 冲180° 对立。刑冲不一定坏，是成长引擎。'},
+        {id:'k4a',title:'四大轴线',body:'ASC-DSC（我-伴侣）· MC-IC（事业-家庭）。这两条轴线是命盘的主骨架，比大部分单个行星都重要。'},
+        {id:'k4b',title:'角宫/续宫/果宫',body:'角宫（1/4/7/10宫）显化力最强，落进来的星曜「摆在明面」；续宫（2/5/8/11）稳定成型；果宫（3/6/9/12）内化沉淀。'},
+        {id:'k4c',title:'重要行星摆位',body:'个人行星（日/月/水/金/火）主性格；社会行星（木/土）主外部机遇约束；世代行星（天/海/冥）主时代烙印。个人盘先看前 5 颗。'},
+        {id:'k4d',title:'关键相位组合',body:'T三角（两冲一刑）＝爆发力+撕扯感；大三角（三个拱）＝天赋池；大十字（四刑两冲）＝命题极重。'},
+        {id:'k4e',title:'金星与水星逆行',body:'水逆约3周/年、金逆约1.5年一次。个人盘里出生时逆行的行星，代表这颗行星的能量要绕一圈才能真正表达出来，不是缺陷。'},
+      ],
+      '生辰':[
+        {id:'k5',title:'为什么要精确到分钟',body:'上升星座每 2 小时换一个，出生时间误差 15 分钟就可能换宫，命盘完全变样。查户口本 or 问妈妈是最靠谱的方式。'},
+        {id:'k5a',title:'真太阳时 vs 平太阳时',body:'古法八字/紫微用真太阳时（考虑经度差和时差），现代星盘软件默认已换算。手排八字时如果人在杭州（东经120°），基本可用北京时间，越往西偏差越大。'},
+        {id:'k5b',title:'子时的两种断法',body:'早子时（0:00-1:00）算今日、晚子时（23:00-24:00）算明日子时——是"今日夜子"还是"明日早子"是命理界老争论。多数流派用"晚子过日"。'},
+        {id:'k5c',title:'节气 > 月初',body:'排八字看月柱，是以「节」为界（立春、惊蛰、清明…），不是每月1号。1月/2月出生的人尤其要注意"过没过立春"，直接影响年柱。'},
+      ],
+      '八字':[
+        {id:'k6',title:'四柱与十神',body:'年柱-祖辈/早年 · 月柱-父母/青年 · 日柱-自己与配偶（日主） · 时柱-子女/晚年。十神＝比劫食伤财官印，看性格与际遇脉络。'},
+        {id:'k7',title:'看八字的顺序',body:'1定日主强弱 2看喜用神 3看格局 4看大运流年。先定强弱是入门第一课。'},
+        {id:'k7a',title:'天干十神对照',body:'与日主同类：比肩/劫财；日主生：食神/伤官；日主克：正财/偏财；克日主：正官/七杀；生日主：正印/偏印。同性为偏、异性为正。'},
+        {id:'k7b',title:'五行生克',body:'木生火·火生土·土生金·金生水·水生木。木克土·土克水·水克火·火克金·金克木。八字缺什么补什么是常见误区，真正要看喜用神。'},
+        {id:'k7c',title:'地支藏干',body:'每个地支藏 1-3 个天干，是八字气机的隐藏牌。例如寅藏甲、丙、戊，午藏丁、己。看细腻性格必须翻藏干。'},
+        {id:'k7d',title:'大运与流年',body:'大运每 10 年一换（起大运岁数看男女、阳阴年）；流年每年一换。命是先天、运是后天，"命好不如运好"就是这个意思。'},
+        {id:'k7e',title:'合冲刑害',body:'六合（子丑/寅亥…）合而聚气；六冲（子午/丑未…）冲而动摇；三刑（寅巳申/丑戌未/子卯/辰午酉亥自刑）刑而受损。合冲同现常有戏剧化事件。'},
+      ],
+      '紫微':[
+        {id:'k8',title:'紫微与八字的差别',body:'八字讲阴阳五行的流动，紫微讲星曜落在十二宫的结构。紫微看人生结构和事件更直观，八字看气运消长更细。'},
+        {id:'k9',title:'十四主星速记',body:'紫微·天机·太阳·武曲·天同·廉贞·天府·太阴·贪狼·巨门·天相·天梁·七杀·破军。落哪个宫，就是那件事的主角。'},
+        {id:'k9a',title:'紫微斗数十二宫',body:'命·兄弟·夫妻·子女·财帛·疾厄·迁移·奴仆(交友)·官禄·田宅·福德·父母。命宫是自我总纲，福德是精神底色，官禄是事业格局。'},
+        {id:'k9b',title:'四化：禄权科忌',body:'化禄=财运缘分好；化权=掌控力增强；化科=声名与贵人；化忌=阻力/执念。生年四化落哪个宫，是这一辈子的关键剧本。'},
+        {id:'k9c',title:'紫微星系 vs 天府星系',body:'紫微为帝、率领天机太阳武曲天同廉贞（前六星）；天府为库、率领太阴贪狼巨门天相天梁七杀破军（后八星）。两星系互为阴阳双子。'},
+        {id:'k9d',title:'四辅星与六煞星',body:'四辅：文昌·文曲·左辅·右弼——加持贵人才艺。六煞：擎羊·陀罗·火星·铃星·地空·地劫——刑克阻碍。看命宫要综合主星+辅煞。'},
+        {id:'k9e',title:'三方四正',body:'看某宫必看它的三方四正（对宫+左右三合宫），共四宫叠加。例：命宫看命+迁移+财帛+官禄，气势才立体。'},
+      ],
+      '易经':[
+        {id:'ky1',title:'太极·两仪·四象·八卦',body:'太极生两仪（阴阳）、两仪生四象（老阴/少阳/少阴/老阳）、四象生八卦（乾兑离震巽坎艮坤）。是《易》的推衍主线，理解阴阳互根就能懂大半。'},
+        {id:'ky2',title:'先天八卦 vs 后天八卦',body:'先天（伏羲）：乾南坤北，讲宇宙对称。后天（文王）：离南坎北，讲流行运化。风水/占卜/择日多用后天，静观思辨多用先天。'},
+        {id:'ky3',title:'六十四卦体系',body:'两卦（上下三爻组合）拼成 64 卦。每卦 6 爻，从下往上读。乾（六阳）· 坤（六阴）· 泰（地在天上，通）· 否（天在地上，塞）是四大关键卦。'},
+        {id:'ky4',title:'爻辞的读法',body:'从初爻到上爻代表事情的初起—发展—顶点—转折—盛极—物极必反。九为阳爻、六为阴爻。「九三」＝第三爻是阳，「六五」＝第五爻是阴。'},
+        {id:'ky5',title:'占卜三法',body:'蓍草法（最古最正宗，费时）· 铜钱法（三枚硬币掷 6 次）· 报数法（心中默想两个数字）。诚心为要，切勿反复占同一事。'},
+      ],
+      '五行':[
+        {id:'kx1',title:'五行属性口诀',body:'木曲直（生长）· 火炎上（升腾）· 土稼穑（承载）· 金从革（收敛）· 水润下（滋养）。用来描述万物的五种运动趋势，不是五种物质。'},
+        {id:'kx2',title:'五行与季节/方位/颜色',body:'木-春-东-青 · 火-夏-南-赤 · 土-长夏-中-黄 · 金-秋-西-白 · 水-冬-北-黑。开运颜色/风水朝向都由此展开。'},
+        {id:'kx3',title:'五行与身体脏腑',body:'木-肝胆-筋 · 火-心小肠-血脉 · 土-脾胃-肌肉 · 金-肺大肠-皮毛 · 水-肾膀胱-骨髓。中医"五脏藏神"就是从这里来的。'},
+        {id:'kx4',title:'补五行三层次',body:'一层：吃、穿、住色系（最柔和）；二层：从事对应五行方向的活动（如缺木多亲近植物）；三层：调整名字/佩戴对应属性物件（力度最强）。喜用神先定，再补。'},
+      ],
+      '风水':[
+        {id:'kf1',title:'现代家居风水基础',body:'气流（不要门对门）· 采光（阴暗屋要点灯）· 整洁（尤其玄关和卧室）· 对称（床要有靠、书桌不背门）。心理舒适 90% 就等于风水好。'},
+        {id:'kf2',title:'卧室三禁忌',body:'一忌床头正对门（气冲床）· 二忌镜对床（照惊）· 三忌床下杂物堆（睡不安）。学生党/租房党可以用屏风或帘子做柔性化解。'},
+        {id:'kf3',title:'办公桌位置',body:'背后有靠（墙、屏风、柜子）· 面前开阔· 侧面进出。水杯放左（青龙位）少压力，放右（白虎位）易起口舌。文昌位放绿植助学业。'},
+        {id:'kf4',title:'家中植物',body:'客厅/玄关：绿萝、发财树（叶子朝上，聚财）；卧室避免大叶植物（吸氧多）；厕所摊薄荷/绿萝净化。仙人掌只放阳台不进屋。'},
+      ],
+      '命理杂谈':[
+        {id:'kz1',title:'算命 vs 造命',body:'算命是知命，造命是用命。知道自己是"驿马格"就别选朝九晚五岗位；知道"食伤旺"就别只做机械劳动。命理不是宿命，是一份使用说明书。'},
+        {id:'kz2',title:'流年犯太岁怎么办',body:'本命年（生肖冲太岁）不必焦虑，行事保守、避大动即可。挂红、拜太岁属民俗心理慰藉。真正影响的是「流年八字」而非属相。'},
+        {id:'kz3',title:'开运物件的边界',body:'水晶、佛珠、朱砂等只有"辅助心念"作用，本质是提醒器。命理格局在，佩戴锦上添花；格局不合，戴再多也无用。'},
+        {id:'kz4',title:'什么时候不适合算命',body:'情绪极端时（大喜大悲）· 反复问同一件事· 想让人替你决策时。命理是自我认知工具，不是决策代打。'},
+        {id:'kz5',title:'为什么两个八字相同的人命运不同',body:'先天八字只是坐标，后天要素：地域、家庭、教育、时代、意志。八字定"底盘概率"，其余靠自己开车。这也是命理不能 100% 应验的原因。'},
+      ],
+    },
+    profiles:[],
+  },
+  wenwan:{
+    knowledge:{
+      '菩提':[
+        {id:'w1',title:'金刚菩提',svg:'jingang',body:'原籽表面纹路要清晰、齿要立体、大小要匀。1-8瓣常见，5瓣最普通，多瓣与异形有溢价。新籽建议清理干净后干刷 1-2 周再上手。产地：尼泊尔（大金刚，纹路狂野）· 印尼（小金刚，纹路细腻）。'},
+        {id:'w2',title:'星月菩提',svg:'xingyue',body:'看密度、看星点均匀度、看月孔正不正。密度高的星月盘玩后包浆快、开片美。「一星一月」是标配，"多星伴月"是溢价。海南料密度最好，藏式月孔更大。'},
+        {id:'w2a',title:'凤眼菩提',svg:'fengyan',body:'表面天然凤眼纹（细长弧形眼）为特征。传统藏传常用于108颗念珠。眼形要正、要深、大小均匀。市面染色/仿冒品多，看剖面颜色是否自然一致。'},
+        {id:'w2b',title:'龙眼菩提',svg:'longyan',body:'每颗籽上有一个天然三角形眼纹如龙目。密度高、油性足者盘出琥珀红。挑籽看三角眼是否规整、色泽是否深沉。'},
+        {id:'w2c',title:'麒麟眼菩提',svg:'qilinyan',body:'表面有细密如麒麟鳞片的天然纹路。密度高，盘玩包浆快，色变从黄→红→深红。稀有度较高，价格较凤眼贵。'},
+        {id:'w2d',title:'白玉菩提',svg:'baiyu',body:'原籽白净如玉，也叫"象牙果"。质地细腻但硬度较低，盘玩要防磕。素净耐看，适合搭配朴素衣着。'},
+        {id:'w2e',title:'太阳子/月亮子',svg:'taiyang',body:'太阳子：一头有孔如太阳眼；月亮子：无孔或月牙纹。二者常配对使用，象征日月同辉。多为红棕色，包浆后油亮。'},
+        {id:'w2f',title:'菩提根',svg:'putigen',body:'贝叶棕的果实。原色米黄，盘玩后开片如冰裂纹，最终变琥珀红。属"变化最大"的菩提之一，适合喜欢盘出戏剧感的人。'},
+        {id:'w2g',title:'莲花菩提',svg:'lianhua',body:'尼泊尔莲花菩提籽表面天然莲花瓣纹路，象征佛缘。密度中等，盘玩包浆后呈枣红色。挑籽看瓣数是否清晰、大小是否均匀。'},
+        {id:'w2h',title:'金蟾菩提',svg:'jinchan',body:'表面自然凸起如蟾蜍疙瘩纹，色泽金黄。密度较高，越盘越油亮。适合搭配红绳或素颜佩戴。'},
+      ],
+      '竹木':[
+        {id:'w3',title:'小叶紫檀',svg:'zitan',body:'鉴别看牛毛纹与荧光。新料偏红，老料偏紫黑。上手前建议净手，油汗过多会花。产地印度。市面上"檀"字多虚，认准"檀香紫檀"学名。'},
+        {id:'w4',title:'海南黄花梨',svg:'huanghuali',body:'看鬼脸、闻香气（清淡药香/降香味）。市面上冒充多，颜色油亮、纹路呆板的多为越黄或其他花梨。海黄油梨密度高、糠梨纹路飘逸。'},
+        {id:'w4a',title:'沉香',svg:'chenxiang',body:'香味是唯一硬指标：温甜、凉、层次分明。分奇楠、生结、熟结、虫漏。价格差距极大，从几百到几十万一克都有。新手先玩线香/沉水普料，别一上来碰奇楠。'},
+        {id:'w4b',title:'檀香',svg:'tanxiang',body:'老山（印度迈索尔）为顶尖，香味清冽悠远；新山（澳洲/印尼）香味略薄。市面九成"檀香"是化工香精，认准正规厂家或有资质商家。'},
+        {id:'w4c',title:'崖柏',svg:'yaibai',body:'太行山悬崖生长的濒危柏木，密度油性极高，香味清冽。分陈化料（老料）和生料。老料油性重、纹路精美，价格高。'},
+        {id:'w4d',title:'金丝楠',svg:'jinsinan',body:'看金丝反光——顺光暗、逆光亮，如水波。分阴沉料（河底埋藏千年）和普通料，阴沉金丝楠是家具与佛珠界的顶流。'},
+        {id:'w4e',title:'紫光檀（黑木）',svg:'ziguang',body:'非洲乌木类，密度极高（沉水），黑中带紫光。上手不易花、抗汗性好，适合汗手。价格远低于小叶紫檀，是入门佛珠好选择。'},
+        {id:'w4f',title:'血檀',svg:'xuetan',body:'赞比亚血檀（染料紫檀）颜色偏血红，纹路狂野。密度稍逊小叶紫檀但价格便宜。市面常冒充小叶紫檀，看棕眼粗细、闻檀香浓淡可辨。'},
+        {id:'w4g',title:'绿檀',svg:'lvtan',body:'愈疮木类，见光变绿是特征。有一股独特的檀香味。密度高、油性足，盘玩包浆后色深发亮。要避免长时间强光直射褪色。'},
+        {id:'w4h',title:'橄榄核',svg:'ganlan',body:'雕刻用橄榄核以广东乌橄榄为最。看核形（圆形/水滴/长）、看肉厚、看雕工。三年以上盘玩会呈枣红色，是文玩三宝之一。'},
+      ],
+      '玉石':[
+        {id:'w5',title:'和田玉',svg:'hetian',body:'看油润度、看结构（羊脂玉毛毡状极细）、看皮色是否自然。籽料带皮价值高，山料相对便宜。俄料/青海料/韩料常冒充和田，密度和油性差异明显。'},
+        {id:'w6',title:'南红玛瑙',svg:'nanhong',body:'看颜色（柿子红/樱桃红/锦红）、看胶质感、看无裂。柿子红品相好、火气足。产地凉山、保山、九口。九口料满肉起胶最贵。'},
+        {id:'w6a',title:'翡翠',svg:'feicui',body:'"种水色工"四字诀。种＝质地（玻璃种>冰种>糯种>豆种）；水＝透光；色＝正阳浓匀；工＝雕工。A货是天然、B货酸洗充胶、C货染色。购买必看权威证书。'},
+        {id:'w6b',title:'绿松石',svg:'lvsong',body:'湖北云盖寺料最有名。看瓷度（越瓷越贵）、看铁线（细腻均匀）、看颜色（原矿高蓝>高瓷蓝>菜籽黄）。市面注胶/沁胶多，认原矿要仔细。'},
+        {id:'w6c',title:'蜜蜡/琥珀',svg:'milla',body:'蜜蜡是不透明琥珀，琥珀是透明的。摩擦生香、盐水浮起为真。产地波罗的海（金珀鸡油）、多米尼加（蓝珀）、缅甸（血珀）。压制蜜蜡便宜但不算真正意义的天然。'},
+        {id:'w6d',title:'青金石',svg:'qingjin',body:'看深蓝底色、看金星（黄铁矿）、看白斑少。阿富汗料最好。青金氧化会褪色，忌汗、忌高温、忌超声波清洗。'},
+        {id:'w6e',title:'碧玺',svg:'bixi',body:'电气石，颜色最丰富的宝石之一。红碧玺（茶色/樱花）、绿碧玺、蓝碧玺、双色碧玺。看净度（越通透越贵）、看颜色饱和度。天然碧玺内部常见絮状包裹体。'},
+        {id:'w6f',title:'月光石',svg:'yueguang',body:'长石类，特征是"月光效应"（转动时表面浮现柔和蓝白光）。斯里兰卡料最好。适合皮肤白的人佩戴，与银饰相衬。'},
+        {id:'w6g',title:'水晶',svg:'shuijing',body:'紫水晶（南美/巴西）· 黄水晶· 白水晶· 粉晶· 发晶（含金红石线）· 幽灵晶（含内嵌矿）。看净度、看颜色纯度、看是否天然（染色/加热多）。'},
+        {id:'w6h',title:'珊瑚',svg:'shanhu',body:'红珊瑚（阿卡/沙丁/momo）为文玩珊瑚主流。阿卡最贵，颜色浓正无白心。市面染色海竹冒充珊瑚多，滴柠檬水/碘酒可辨。红珊瑚忌汗、忌香水、忌硬物磕碰。'},
+      ],
+      '金属':[
+        {id:'w7',title:'老银器',svg:'laoyin',body:'看包浆、看工艺、看含银量印记。清代老银器最有味道，苗银多是白铜工艺，非纯银。银首饰配汗液变黑属正常氧化，用擦银布可复原。'},
+        {id:'w7a',title:'藏银/尼泊尔银',svg:'zangyin',body:'"藏银"多为白铜（铜镍锌），传统含银量约30%以下。真正的藏地老银器多含银60-90%，需看工艺（大颗宝石镶嵌+粗犷錾刻）。'},
+        {id:'w7b',title:'纯铜/黄铜',svg:'huangtong',body:'纯铜手串盘出老铜色，很有复古感。黄铜（铜锌合金）声音清脆、颜色偏金。铜制品长期接触汗液会有铜绿，用清水擦拭即可。'},
+        {id:'w7c',title:'白铜银饰',svg:'baitong',body:'白铜（铜镍锌）颜色像银但便宜。一是重量比银轻，二是敲击声闷。市面"苗银"90%是白铜工艺品，观赏无问题、勿当纯银买。'},
+        {id:'w7d',title:'银发晶（钛晶）',svg:'yinfa',body:'水晶内含金红石纤维，如银丝流动。挑选看丝的密度、走向是否有序。忌高温和超声波，避免丝断。'},
+        {id:'w7e',title:'黑檀+银包边工艺',svg:'yinbao',body:'手串常见的"银包边"工艺：珠子两端加银帽装饰。要看银帽是否贴合无缝、纹样是否均匀。是老工艺融合的代表。'},
+      ],
+      '绳串':[
+        {id:'w8',title:'绳结基础',svg:'jiegang',body:'金刚结（连接珠子间隔）· 平结（结尾收口）· 蛇结（结绳装饰）· 双联结（起头/尾）。金刚结手作 1cm 约 3-5 分钟，编 108 颗全金刚结要 4-6 小时，请预留时间。'},
+        {id:'w8a',title:'常用绳材',svg:'shengcai',body:'玉线（尼龙涤纶，最常用）、A玉线（硬挺）、蜡线（有蜡质包裹，耐磨）、纯棉绳（吸汗、易脏）。手串用 0.8mm 玉线是通用规格。'},
+        {id:'w8b',title:'穿珠打结顺序',svg:'chuanzhu',body:'一般：起头→打双联结→穿主珠→过佛塔→背云隔片→打金刚结→尾饰→收平结。三通佛头是核心结构，有卡珠功能。'},
+        {id:'w8c',title:'手串规格',svg:'guige',body:'常见规格：单圈13/14/15颗（女）、17/18颗（男）、108颗（念珠）。计算方式：手腕一圈周长(cm) ÷ 珠子直径(cm) = 颗数。8mm 珠子女生标配 15 颗左右。'},
+        {id:'w8d',title:'佛头三通',svg:'santong',body:'三通（葫芦头/佛塔）是108颗念珠的核心结构，起卡珠+分层作用。三通材质与主珠一致最佳，也可用玛瑙/银质做撞色。'},
+        {id:'w8e',title:'背云与流苏',svg:'beiyun',body:'背云挂在三通下方，象征"心中一丘壑"；流苏结束整串，颜色与主珠呼应。传统藏式常用玛瑙背云+棉线流苏。'},
+      ],
+      '香道':[
+        {id:'wx1',title:'香道流派',svg:'xiangdao',body:'日本御家流（华丽仪式感）· 志野流（禅意简朴）；中国明清香道（重"闻香辨性"）；现代品香（结合冥想/工作场景）。品香三阶：闻香→辨香→论香。'},
+        {id:'wx2',title:'品香器具',svg:'xiangju',body:'香炉（铜/瓷/银）· 香箸· 香匙· 香刀· 灰押· 火筷· 云母片。文人品香一般用小型宣德炉+隔火品香法（不明火）。'},
+        {id:'wx3',title:'隔火熏香法',svg:'gehuo',body:'炭火埋灰下，云母片放炭上，香料放云母上，靠热度散香而不燃烧。这样闻到的是香料原始气息，不是烟味。是最文雅的品香法。'},
+        {id:'wx4',title:'常见香材',svg:'xiangcai',body:'沉香（幽甜层次多）· 檀香（清冽甜厚）· 龙涎香（海洋气/极稀）· 麝香（浓郁动物香/合法替代已多）· 安息香、乳香（宗教用）。新手先玩单品沉香/老山檀。'},
+        {id:'wx5',title:'合香与配伍',svg:'hexiang',body:'合香＝将多种香料按比例调配。经典配方如"孔庙香"（沉香+檀香+丁香）· "宣和贵重香"（沉香+乳香+麝香）。讲究"君臣佐使"，一香为主、他香辅之。'},
+        {id:'wx6',title:'燃香三种形式',svg:'ranxiang',body:'线香（日常）· 盘香（长时间）· 塔香/塔锥（视觉感）。开会/写作用短线香（15-20分钟），冥想用盘香（1-3小时），迎客可用塔香。'},
+      ],
+      '盘玩心法':[
+        {id:'wp1',title:'盘玩四阶',svg:'panwan',body:'一阶：识料（看清材料本质）· 二阶：清干（去脏去浮油）· 三阶：养形（把玩使其上包浆）· 四阶：静置（让包浆稳定）。四阶循环，一件文玩才真正"活"起来。'},
+        {id:'wp2',title:'心念养物',svg:'xinnian',body:'把玩时心念安定，物件才会随之温润。焦躁烦闷时盘玩，物件反而易开裂/脏污。所以文玩本身是修心的镜子——它照见你现在的状态。'},
+        {id:'wp3',title:'一物一玩',svg:'yiwu',body:'同一段时间只专心盘一件，别贪多。文玩人有句话叫"三年一挂、五年一件"——真正的珍品是一件件养出来的，不是买回来堆着。'},
+        {id:'wp4',title:'盘玩记录',svg:'jilu',body:'新料入手第一天拍照，第7/30/90/180天各拍一次。同一角度、同一光线，你会看到时间和你双手带来的礼物。这是文玩最动人的部分。'},
+        {id:'wp5',title:'器物流转',svg:'liuzhuan',body:'珍贵文玩到一定程度，"藏"不如"传"。转让/送出的珍品会带着你的能量流向下一个人，也给自己腾出空间迎接新的物件。占有太多反而失去把玩的乐趣。'},
+      ],
+      '其他':[
+        {id:'w9',title:'盘玩三大忌',svg:'sanji',body:'一忌汗手直接盘（先净手），二忌暴晒（开裂），三忌换手频繁（包浆不均）。刚上手的新料"文玩期"1-2 个月内尤其要小心。'},
+        {id:'w9a',title:'包浆的科学',svg:'baojiang',body:'包浆本质是：物件表层的天然油脂/树脂+把玩过程中转移的皮肤微油+氧化，形成的稳定化合物膜。所以"净手盘"和"干刷"其实是在帮助包浆均匀分布。'},
+        {id:'w9b',title:'刷、盘、放的节奏',svg:'shuapan',body:'新籽先"刷"（软毛刷去毛去糠）1-2周；再"盘"（净手轻盘，出油出色）2-4周；期间"放"（阴凉处静置1-3天）稳定包浆层。刷-盘-放循环是文玩人的日常仪式。'},
+        {id:'w9c',title:'密封 vs 通风',svg:'mifeng',body:'含水量高的料（新星月/新金刚）需要"缓干"避免开裂——密封收纳；含油量高的老料（沉香/紫檀）需要通风避免闷味——阴凉通风处开放存放。'},
+        {id:'w9d',title:'如何避免"打眼"',svg:'dayan',body:'一看料源（不贪便宜、不听故事）；二看剖面/尾料（不完全的信息骗子最爱）；三看证书（贵重玉石类必需）；四看卖家（老店老客更靠谱）。文玩九成"捡漏"是被"漏捡"。'},
+      ],
+    }
+  },
+  meta:{version:1,createdAt:Date.now()},
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return structuredClone(seed);
+    const data = JSON.parse(raw);
+    // 兜底：任何一级 key 缺失就用 seed 补
+    for(const k of Object.keys(seed)){
+      if(!(k in data)) data[k] = structuredClone(seed[k]);
+    }
+    // v1.2 迁移：自媒体新增 xhsHot/dyHot/refreshedAt
+    if(!data.media.xhsHot) data.media.xhsHot = structuredClone(seed.media.xhsHot);
+    if(!data.media.dyHot) data.media.dyHot = structuredClone(seed.media.dyHot);
+    if(!data.media.refreshedAt) data.media.refreshedAt = {xhs:'',dy:''};
+    // v1.2 迁移：文玩知识增加 svg 字段（如果对应 seed 里有）
+    if(data.wenwan && data.wenwan.knowledge){
+      Object.keys(seed.wenwan.knowledge).forEach(cat=>{
+        if(!data.wenwan.knowledge[cat]) data.wenwan.knowledge[cat] = structuredClone(seed.wenwan.knowledge[cat]);
+        else{
+          data.wenwan.knowledge[cat].forEach(item=>{
+            if(!item.svg){
+              const seedItem = seed.wenwan.knowledge[cat].find(s=>s.title===item.title);
+              if(seedItem && seedItem.svg) item.svg = seedItem.svg;
+            }
+          });
+        }
+      });
+    }
+    // v1.1 兼容
+    if(!data.books) data.books = structuredClone(seed.books);
+    // v1.3 迁移：为老用户增量补充新知识点/新分类（不覆盖已有条目）
+    if(!data.__know_synced_v13){
+      // 玄学：补新分类和新条目
+      const seedMy = seed.mystic.knowledge;
+      if(!data.mystic) data.mystic = structuredClone(seed.mystic);
+      if(!data.mystic.knowledge) data.mystic.knowledge = {};
+      Object.keys(seedMy).forEach(cat=>{
+        if(!data.mystic.knowledge[cat]) data.mystic.knowledge[cat] = [];
+        const existIds = new Set(data.mystic.knowledge[cat].map(x=>x.id));
+        seedMy[cat].forEach(item=>{
+          if(!existIds.has(item.id)) data.mystic.knowledge[cat].push(structuredClone(item));
+        });
+      });
+      // 文玩：补新分类和新条目
+      const seedWw = seed.wenwan.knowledge;
+      if(!data.wenwan) data.wenwan = structuredClone(seed.wenwan);
+      if(!data.wenwan.knowledge) data.wenwan.knowledge = {};
+      Object.keys(seedWw).forEach(cat=>{
+        if(!data.wenwan.knowledge[cat]) data.wenwan.knowledge[cat] = [];
+        const existIds = new Set(data.wenwan.knowledge[cat].map(x=>x.id));
+        seedWw[cat].forEach(item=>{
+          if(!existIds.has(item.id)) data.wenwan.knowledge[cat].push(structuredClone(item));
+        });
+      });
+      data.__know_synced_v13 = true;
+    }
+    // v1.3 迁移：把书架同步为真实的微信读书书架（仅执行一次）
+    if(!data.__weread_synced_v1){
+      // 保留用户已有的划线：如果新旧书里有同名的，把新书 id 改成旧书 id
+      const oldTitleToId = {};
+      (data.books||[]).forEach(b=>{ if(b && b.title) oldTitleToId[b.title]=b.id; });
+      const newBooks = structuredClone(seed.books).map(b=>{
+        if(oldTitleToId[b.title]) b.id = oldTitleToId[b.title];
+        return b;
+      });
+      data.books = newBooks;
+      data.__weread_synced_v1 = true;
+    }
+    return data;
+  }catch(e){console.error(e);return structuredClone(seed);}
+}
+// 命理档案的 auto 字段迁移，放在 initAll 里做（那时命理算法函数已可用）
+function migrateFateAuto(){
+  try{
+    if(state.mystic && Array.isArray(state.mystic.profiles)){
+      let changed = false;
+      state.mystic.profiles.forEach(p=>{
+        if(!p.auto && p.date){p.auto = computeFate(p); changed=true;}
+      });
+      if(changed) save();
+    }
+  }catch(e){console.warn('migrateFateAuto',e);}
+}
+function save(){
+  state.meta = state.meta || {};
+  state.meta.updatedAt = Date.now();
+  localStorage.setItem(KEY,JSON.stringify(state));
+  renderStatusBar();
+}
+let state = load();
+
+/* ========================================================================
+   顶部标签切换
+   ======================================================================== */
+document.querySelectorAll('#mainTabs button').forEach(b=>{
+  b.addEventListener('click',()=>switchPane(b.dataset.tab));
+});
+function switchPane(name){
+  document.querySelectorAll('#mainTabs button').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
+  document.querySelectorAll('[data-pane]').forEach(x=>x.classList.toggle('hidden',x.dataset.pane!==name));
+}
+
+/* 读书子标签 */
+document.querySelectorAll('#readingSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#readingSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('[data-rd-pane]').forEach(x=>x.classList.toggle('hidden',x.dataset.rdPane!==b.dataset.rdTab));
+  });
+});
+
+document.querySelectorAll('#workSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#workSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('[data-work-pane]').forEach(x=>x.classList.toggle('hidden',x.dataset.workPane!==b.dataset.workTab));
+  });
+});
+
+/* Industry / Project sub */
+let curInd='玩具',curPj='正版IP';
+document.querySelectorAll('#industrySubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    curInd=b.dataset.ind;
+    document.querySelectorAll('#industrySubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    renderIndustry();
+  });
+});
+document.querySelectorAll('#projectSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    curPj=b.dataset.pj;
+    document.querySelectorAll('#projectSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    renderProject();
+  });
+});
+
+document.querySelectorAll('#mysticSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#mysticSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('[data-my-pane]').forEach(x=>x.classList.toggle('hidden',x.dataset.myPane!==b.dataset.myTab));
+  });
+});
+
+let curMyCat='星座',curWWCat='菩提';
+document.querySelectorAll('#mysticKnowSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    curMyCat=b.dataset.cat;
+    document.querySelectorAll('#mysticKnowSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    renderMysticKnowledge();
+  });
+});
+document.querySelectorAll('#wenwanSubtabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    curWWCat=b.dataset.cat;
+    document.querySelectorAll('#wenwanSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
+    renderWenwan();
+  });
+});
+
+/* ========================================================================
+   书架
+   ======================================================================== */
+let bFilter='全部',editingBookId=null;
+// 稳定的渐变色对，基于书名 hash
+const GRADIENTS = [
+  ['#C8A97A','#8C5E36'],['#B4886E','#6B3F2B'],['#8AA69B','#4E6F63'],
+  ['#B0A48C','#6B5E48'],['#A67B5B','#5C3E29'],['#9AAF9A','#526C52'],
+  ['#C29D8B','#7A5443'],['#8E9DAF','#4E5F71'],['#A88968','#5F4626'],
+  ['#B8A99A','#7A6853'],['#9B8877','#5A4A3A'],['#A0967E','#5F5744'],
+];
+function coverColors(str){
+  let h=0;for(const c of String(str||'')) h=(h*31+c.charCodeAt(0))>>>0;
+  return GRADIENTS[h%GRADIENTS.length];
+}
+function coverHTML(book, big){
+  if(book.cover){
+    return `<img src="${escape(book.cover)}" alt="${escape(book.title)}" onerror="this.parentElement.classList.add('gen');this.parentElement.style.setProperty('--gen-a','${coverColors(book.title)[0]}');this.parentElement.style.setProperty('--gen-b','${coverColors(book.title)[1]}');this.outerHTML='<div class=\\'gen-title\\'>${escape(book.title)}</div>'" />`;
+  }
+  const [a,b]=coverColors(book.title);
+  return `<div class="gen-title" style="font-size:${big?20:15}px;">${escape(book.title)}</div>`;
+}
+function coverWrapClass(book){
+  return book.cover ? 'book-cover' : 'book-cover gen';
+}
+function coverStyle(book){
+  if(book.cover) return '';
+  const [a,b]=coverColors(book.title);
+  return `--gen-a:${a};--gen-b:${b};`;
+}
+function statusBadge(status){
+  const cls = status==='在读'?'reading':(status==='已读'?'done':'wish');
+  return `<span class="book-status-badge ${cls}">${escape(status)}</span>`;
+}
+function filterBooks(s,btn){
+  bFilter=s;
+  document.querySelectorAll('.filter-bar .chip').forEach(x=>{
+    if(x.dataset.st!==undefined) x.classList.toggle('on',x===btn);
+  });
+  renderShelf();
+}
+function renderShelf(){
+  const term = (document.getElementById('bSearch').value||'').toLowerCase();
+  const list = (state.books||[])
+    .filter(b=>bFilter==='全部'||b.status===bFilter)
+    .filter(b=>!term||[b.title,b.author].join(' ').toLowerCase().includes(term))
+    .sort((a,b)=>b.ts-a.ts);
+  const box = document.getElementById('shelfGrid');
+  const cards = list.map(b=>{
+    const qCount = (state.quotes||[]).filter(q=>q.bookId===b.id).length;
+    return `
+      <div class="book-card" onclick="openBookDetail('${b.id}')">
+        <div class="${coverWrapClass(b)}" style="${coverStyle(b)}">
+          ${b.cover?`<img src="${escape(b.cover)}" alt="" onerror="this.parentElement.classList.add('gen');this.parentElement.style.setProperty('--gen-a','${coverColors(b.title)[0]}');this.parentElement.style.setProperty('--gen-b','${coverColors(b.title)[1]}');this.style.display='none';this.parentElement.innerHTML+='<div class=\\'gen-title\\'>${escape(b.title)}</div>'"/>`:`<div class="gen-title">${escape(b.title)}</div>`}
+          ${statusBadge(b.status)}
+        </div>
+        <div class="book-title">${escape(b.title)}</div>
+        <div class="book-author">${escape(b.author||'')}</div>
+        ${qCount?`<div class="book-quotes-count">${qCount} 条划线</div>`:''}
+      </div>`;
+  }).join('');
+  const addCard = `
+    <div class="book-card" onclick="openBookModal()">
+      <div class="book-add">＋</div>
+      <div class="book-add-label">加一本书</div>
+    </div>`;
+  box.innerHTML = cards + addCard;
+}
+function openBookModal(){
+  editingBookId=null;
+  document.getElementById('bmTitle').innerText='加一本书';
+  ['bTitle','bAuthor','bCover','bPublisher','bYear','bCore','bNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bStatus').value='想读';
+  document.getElementById('bProgress').value='0';
+  openModal('bookModal');
+}
+function editBook(id){
+  const b = (state.books||[]).find(x=>x.id===id);if(!b) return;
+  editingBookId=id;
+  document.getElementById('bmTitle').innerText='编辑书籍';
+  document.getElementById('bTitle').value=b.title||'';
+  document.getElementById('bAuthor').value=b.author||'';
+  document.getElementById('bCover').value=b.cover||'';
+  document.getElementById('bPublisher').value=b.publisher||'';
+  document.getElementById('bYear').value=b.year||'';
+  document.getElementById('bStatus').value=b.status||'想读';
+  document.getElementById('bProgress').value=b.progress||0;
+  document.getElementById('bCore').value=b.coreView||'';
+  document.getElementById('bNote').value=b.note||'';
+  closeModal('bookDetailModal');
+  openModal('bookModal');
+}
+function saveBook(){
+  const title = document.getElementById('bTitle').value.trim();
+  if(!title){alert('书名不能空');return;}
+  const obj={
+    title,
+    author:document.getElementById('bAuthor').value.trim(),
+    cover:document.getElementById('bCover').value.trim(),
+    publisher:document.getElementById('bPublisher').value.trim(),
+    year:document.getElementById('bYear').value.trim(),
+    status:document.getElementById('bStatus').value,
+    progress:Number(document.getElementById('bProgress').value)||0,
+    coreView:document.getElementById('bCore').value.trim(),
+    note:document.getElementById('bNote').value.trim(),
+    ts:Date.now(),
+  };
+  if(!state.books) state.books=[];
+  if(editingBookId){
+    const i = state.books.findIndex(x=>x.id===editingBookId);
+    state.books[i]={...state.books[i],...obj};
+  }else{
+    obj.id='b_'+Date.now();
+    state.books.unshift(obj);
+  }
+  save();closeModal('bookModal');renderShelf();
+  if(editingBookId) openBookDetail(editingBookId);
+}
+function delBook(id){
+  if(!confirm('删除这本书？关联的划线金句会保留在金句本里但取消关联。')) return;
+  state.books = (state.books||[]).filter(x=>x.id!==id);
+  // 取消关联
+  (state.quotes||[]).forEach(q=>{if(q.bookId===id) q.bookId=null;});
+  save();closeModal('bookDetailModal');renderShelf();renderQuotes();
+}
+function openBookDetail(id){
+  const b = (state.books||[]).find(x=>x.id===id);if(!b) return;
+  const quotes = (state.quotes||[]).filter(q=>q.bookId===id).sort((a,b)=>b.ts-a.ts);
+  const [ga,gb]=coverColors(b.title);
+  const coverBox = b.cover
+    ? `<div class="bd-cover"><img src="${escape(b.cover)}" alt="" onerror="this.parentElement.classList.add('gen');this.parentElement.style.setProperty('--gen-a','${ga}');this.parentElement.style.setProperty('--gen-b','${gb}');this.outerHTML='${escape(b.title)}'"/></div>`
+    : `<div class="bd-cover gen" style="--gen-a:${ga};--gen-b:${gb};">${escape(b.title)}</div>`;
+  const html = `
+    <div class="book-detail">
+      ${coverBox}
+      <div>
+        <h3 class="bd-title">${escape(b.title)}</h3>
+        <div class="bd-meta">
+          <span class="pill">${escape(b.status||'—')}</span>
+          <span class="pill">进度 ${b.progress||0}%</span>
+          <br>
+          ${escape(b.author||'—')} · ${escape(b.publisher||'')} ${escape(b.year||'')}
+        </div>
+
+        <div class="bd-section">
+          <h4>核心观点
+            <button class="btn small ghost" onclick="askAISummary('${b.id}')">✧ 让 Q 帮我总结</button>
+          </h4>
+          <div class="core ${b.coreView?'':'empty-core'}">${b.coreView?escape(b.coreView):'还没填。可以自己写，也可以点右上角"让 Q 帮我总结"——我会用你贴过来的划线在下一轮对话里生成总结再写回这里。'}</div>
+          ${b.note?`<h4 style="margin-top:14px;">我的备注</h4><div class="core">${escape(b.note)}</div>`:''}
+        </div>
+
+        <div class="bd-section bd-quotes">
+          <h4>划线金句（${quotes.length}）
+            <button class="btn small" onclick="addQuoteForBook('${b.id}')">＋ 加一条划线</button>
+          </h4>
+          ${quotes.length? quotes.map(q=>`
+            <div class="quote">
+              <div class="q-text">「${escape(q.text)}」</div>
+              <div class="q-meta"><span class="pill">${escape(q.topic)}</span></div>
+              ${q.note?`<div class="q-note">${escape(q.note)}</div>`:''}
+              <div class="q-actions">
+                <button class="btn small ghost" onclick="editQuoteFromBook('${q.id}','${b.id}')">编辑</button>
+                <button class="btn small danger" onclick="delQuoteFromBook('${q.id}','${b.id}')">删</button>
+              </div>
+            </div>
+          `).join('') : '<div class="empty">还没有划线。点右上角加第一条。</div>'}
+        </div>
+
+        <div class="bd-actions">
+          ${b.reader?`<a class="btn" href="${escape(b.reader)}" target="_blank">去微信读书阅读 →</a>`:''}
+          <button class="btn ghost" onclick="editBook('${b.id}')">编辑本书</button>
+          <button class="btn ghost" onclick="closeModal('bookDetailModal')">关闭</button>
+          <button class="btn danger" style="margin-left:auto;" onclick="delBook('${b.id}')">删除本书</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('bookDetailBody').innerHTML = html;
+  openModal('bookDetailModal');
+}
+function addQuoteForBook(bookId){
+  returnToBookId = bookId;
+  closeModal('bookDetailModal');
+  openQuoteModal();
+  document.getElementById('qBookId').value=bookId;
+  const b = state.books.find(x=>x.id===bookId);
+  if(b){
+    document.getElementById('qBook').value=b.title;
+    document.getElementById('qAuthor').value=b.author||'';
+  }
+}
+function askAISummary(bookId){
+  const b = state.books.find(x=>x.id===bookId);if(!b) return;
+  const quotes = (state.quotes||[]).filter(q=>q.bookId===bookId);
+  const prompt = `请基于以下划线，总结《${b.title}》（${b.author||'佚名'}）的核心观点，2-3 句话，不要鸡汤。\n\n划线：\n${quotes.map((q,i)=>`${i+1}. ${q.text}`).join('\n')||'（暂无划线，请你根据自己了解写一版）'}\n\n请把总结写回工作台《${b.title}》的核心观点字段。`;
+  const ok = confirm('已经把下面这段提示词拷贝到剪贴板，你到对话里粘贴给我就行：\n\n'+prompt.slice(0,300)+'\n\n点确定复制。');
+  if(ok){
+    navigator.clipboard.writeText(prompt).then(
+      ()=>alert('已复制。切到 QoderWork 对话粘贴即可。'),
+      ()=>prompt('复制失败，请手动复制这段文字：',prompt)
+    );
+  }
+}
+
+/* ========================================================================
+   金句
+   ======================================================================== */
+let qFilter='全部',editingQuoteId=null;
+function filterQuotes(t,btn){
+  qFilter=t;
+  // 仅切换金句 chip 组的 active（不要影响其他模块的 filter chip）
+  document.querySelectorAll('#quoteTopicChips .chip').forEach(x=>x.classList.toggle('on',x===btn));
+  renderQuotes();
+}
+const DEFAULT_TOPICS = ['成长','职场','关系','内观/心性','商业/供应链','其他'];
+function collectTopicCounts(){
+  const map = new Map();
+  (state.quotes||[]).forEach(q=>{
+    const t = (q.topic||'').trim() || '其他';
+    map.set(t, (map.get(t)||0)+1);
+  });
+  return map;
+}
+function renderQuoteTopicChips(){
+  const box = document.getElementById('quoteTopicChips'); if(!box) return;
+  const counts = collectTopicCounts();
+  const total = (state.quotes||[]).length;
+  // 先按使用频次降序；未出现过的默认主题以 0 追加在末尾，方便新用户看到常用选项
+  const used = [...counts.entries()].sort((a,b)=>b[1]-a[1]);
+  const usedSet = new Set(used.map(x=>x[0]));
+  const suggested = DEFAULT_TOPICS.filter(t=>!usedSet.has(t)).map(t=>[t,0]);
+  const items = [['全部',total], ...used, ...suggested];
+  box.innerHTML = items.map(([name,cnt],idx)=>{
+    const isActive = (name===qFilter) || (idx===0 && qFilter==='全部');
+    const badge = cnt>0 ? `<span style="opacity:.6;margin-left:4px;">${cnt}</span>` : '';
+    return `<button class="chip ${isActive?'on':''}" data-topic="${escape(name)}"
+              onclick="filterQuotes('${name.replace(/'/g,"\\'")}',this)">${escape(name)}${badge}</button>`;
+  }).join('');
+}
+function refreshQuoteTopicDatalist(){
+  const dl = document.getElementById('qTopicList'); if(!dl) return;
+  const used = [...collectTopicCounts().keys()];
+  const merged = [...new Set([...used, ...DEFAULT_TOPICS])];
+  dl.innerHTML = merged.map(t=>`<option value="${escape(t)}"></option>`).join('');
+}
+function renderQuotes(){
+  renderQuoteTopicChips();
+  refreshQuoteTopicDatalist();
+  const term = (document.getElementById('qSearch').value||'').toLowerCase();
+  const list = state.quotes
+    .filter(q=>qFilter==='全部'||q.topic===qFilter)
+    .filter(q=>!term||[q.text,q.book,q.author,q.note].join(' ').toLowerCase().includes(term))
+    .sort((a,b)=>b.ts-a.ts);
+  const box = document.getElementById('quotesList');
+  if(!list.length){box.innerHTML='<div class="empty">还没有金句。点右上角「记一句」开始。</div>';return;}
+  box.innerHTML = list.map(q=>{
+    const linkedBook = q.bookId ? (state.books||[]).find(b=>b.id===q.bookId) : null;
+    const bookDisplay = linkedBook
+      ? `<a href="javascript:void(0)" onclick="openBookDetail('${linkedBook.id}')">📖 ${escape(linkedBook.title)}</a>`
+      : `📖 ${escape(q.book||'—')}`;
+    return `
+    <div class="quote">
+      <div class="q-text">「${escape(q.text)}」</div>
+      <div class="q-meta">${bookDisplay} · ${escape(q.author||'—')} · <span class="pill">${escape(q.topic)}</span></div>
+      ${q.note?`<div class="q-note">${escape(q.note)}</div>`:''}
+      <div class="q-actions">
+        <button class="btn small ghost" onclick="editQuote('${q.id}')">编辑</button>
+        <button class="btn small danger" onclick="delQuote('${q.id}')">删</button>
+      </div>
+    </div>
+  `;}).join('');
+}
+function refreshQuoteBookSelect(){
+  const sel = document.getElementById('qBookId');
+  const cur = sel.value;
+  const opts = ['<option value="">— 不关联 —</option>']
+    .concat((state.books||[]).map(b=>`<option value="${b.id}">${escape(b.title)}</option>`));
+  sel.innerHTML = opts.join('');
+  sel.value = cur;
+}
+function openQuoteModal(){
+  editingQuoteId=null;
+  document.getElementById('qmTitle').innerText='记一句金句';
+  ['qText','qBook','qAuthor','qNote'].forEach(id=>document.getElementById(id).value='');
+  refreshQuoteBookSelect();
+  document.getElementById('qBookId').value='';
+  refreshQuoteTopicDatalist();
+  // 默认沿用当前过滤器的主题（若不是"全部"），否则留空由用户输入
+  document.getElementById('qTopic').value = (qFilter && qFilter!=='全部') ? qFilter : '';
+  openModal('quoteModal');
+}
+function editQuote(id){
+  const q = state.quotes.find(x=>x.id===id);if(!q) return;
+  editingQuoteId=id;
+  document.getElementById('qmTitle').innerText='编辑金句';
+  document.getElementById('qText').value=q.text;
+  refreshQuoteBookSelect();
+  refreshQuoteTopicDatalist();
+  document.getElementById('qBookId').value=q.bookId||'';
+  document.getElementById('qBook').value=q.book||'';
+  document.getElementById('qAuthor').value=q.author||'';
+  document.getElementById('qTopic').value=q.topic||'';
+  document.getElementById('qNote').value=q.note||'';
+  openModal('quoteModal');
+}
+function saveQuote(){
+  const text = document.getElementById('qText').value.trim();
+  if(!text){alert('原文不能空');return;}
+  const bookId = document.getElementById('qBookId').value || null;
+  let book = document.getElementById('qBook').value.trim();
+  let author = document.getElementById('qAuthor').value.trim();
+  if(bookId){
+    const b = state.books.find(x=>x.id===bookId);
+    if(b){book = book || b.title; author = author || b.author||'';}
+  }
+  const obj={
+    text, book, author,
+    bookId,
+    topic:(document.getElementById('qTopic').value||'').trim() || '其他',
+    note:document.getElementById('qNote').value.trim(),
+    ts:Date.now(),
+  };
+  if(editingQuoteId){
+    const i = state.quotes.findIndex(x=>x.id===editingQuoteId);
+    state.quotes[i]={...state.quotes[i],...obj};
+  }else{
+    obj.id='q_'+Date.now();
+    state.quotes.unshift(obj);
+  }
+  save();closeModal('quoteModal');renderQuotes();renderShelf();
+  if(returnToBookId){
+    const rb = returnToBookId; returnToBookId = null;
+    openBookDetail(rb);
+  }
+}
+function delQuote(id){
+  if(!confirm('确认删除这条金句？')) return;
+  state.quotes = state.quotes.filter(x=>x.id!==id);
+  save();renderQuotes();renderShelf();
+}
+
+// 从书籍详情弹窗里操作划线：保存/删除完后回到详情页
+let returnToBookId = null;
+function editQuoteFromBook(qid, bookId){
+  returnToBookId = bookId;
+  closeModal('bookDetailModal');
+  editQuote(qid);
+}
+function delQuoteFromBook(qid, bookId){
+  if(!confirm('确认删除这条划线？')) return;
+  state.quotes = state.quotes.filter(x=>x.id!==qid);
+  save();renderQuotes();renderShelf();
+  openBookDetail(bookId);
+}
+
+/* ========================================================================
+   工作 · 行业
+   ======================================================================== */
+let fileCtx=null;  // {kind:'industry'|'project',key:'玩具'|'正版IP'} 打开文件 modal 时记录
+function renderIndustry(){
+  const d = state.work.industry[curInd];
+  const box = document.getElementById('industryBody');
+  box.innerHTML = `
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>常用资讯源</h3>
+            <button class="btn small" onclick="addSource('industry','${curInd}')">＋ 加来源</button>
+          </div>
+          <div class="desc">点「打开」在新窗口刷新公开来源。全程不登录你的账号。</div>
+          <div>${d.sources.map((s,i)=>`
+            <div class="trend-src">
+              <div class="t-main">
+                <div class="t-name">${escape(s.name)}</div>
+                <div class="t-desc">${escape(s.note||s.url)}</div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn small" onclick="window.open('${s.url}','_blank')">打开</button>
+                <button class="btn small ghost" onclick="editSource('industry','${curInd}',${i})">编辑</button>
+                <button class="btn small danger" onclick="delSource('industry','${curInd}',${i})">删</button>
+              </div>
+            </div>
+          `).join('')||'<div class="empty">还没有来源，点「加来源」自己配置。</div>'}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>${curInd} · 文件柜</h3>
+            <button class="btn small" onclick="openFileModal('industry','${curInd}')">＋ 加文件</button>
+          </div>
+          <div class="desc">存链接和条目，不上传文件本体。适合放报告、飞书文档、钉钉文件等。</div>
+          <div>${(d.files||[]).map((f,i)=>renderFile(f,i,'industry',curInd)).join('')||'<div class="empty">还没有文件。</div>'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function renderProject(){
+  const d = state.work.project[curPj];
+  const box = document.getElementById('projectBody');
+  box.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>${curPj}</h3>
+        <button class="btn small" onclick="openFileModal('project','${curPj}')">＋ 加文件</button>
+      </div>
+      <div class="desc">${escape(d.desc||'')}</div>
+      <div>${(d.files||[]).map((f,i)=>renderFile(f,i,'project',curPj)).join('')||'<div class="empty">还没有文件，点「加文件」记第一条。</div>'}</div>
+    </div>
+  `;
+}
+function renderFile(f,i,kind,key){
+  const link = f.link ? `<a href="${f.link}" target="_blank" rel="noopener">打开</a>` : '';
+  return `
+    <div class="file-item">
+      <div class="fi-main">
+        <div class="fi-name">${escape(f.name)}</div>
+        <div class="fi-tag"><span class="pill">${escape(f.type)}</span>${f.note?escape(f.note):''}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        ${link}
+        <button class="btn small ghost" onclick="editFile('${kind}','${key}',${i})">编辑</button>
+        <button class="btn small danger" onclick="delFile('${kind}','${key}',${i})">删</button>
+      </div>
+    </div>`;
+}
+function openFileModal(kind,key){
+  fileCtx={kind,key,editIndex:null};
+  document.getElementById('fmTitle') && (document.getElementById('fmTitle').innerText='加一个文件条目');
+  ['fName','fLink','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fType').value='行研报告';
+  openModal('fileModal');
+}
+function editFile(kind,key,i){
+  const arr = kind==='industry' ? state.work.industry[key].files : state.work.project[key].files;
+  const f = arr[i]; if(!f) return;
+  fileCtx = {kind, key, editIndex:i};
+  document.getElementById('fmTitle') && (document.getElementById('fmTitle').innerText='编辑文件条目');
+  document.getElementById('fName').value = f.name||'';
+  document.getElementById('fType').value = f.type||'行研报告';
+  document.getElementById('fLink').value = f.link||'';
+  document.getElementById('fNote').value = f.note||'';
+  openModal('fileModal');
+}
+function saveFile(){
+  const name = document.getElementById('fName').value.trim();
+  if(!name){alert('文件名不能空');return;}
+  const obj={
+    name, type:document.getElementById('fType').value,
+    link:document.getElementById('fLink').value.trim(),
+    note:document.getElementById('fNote').value.trim(), ts:Date.now(),
+  };
+  const arr = fileCtx.kind==='industry'
+    ? state.work.industry[fileCtx.key].files
+    : state.work.project[fileCtx.key].files;
+  if(fileCtx.editIndex!=null && arr[fileCtx.editIndex]){
+    arr[fileCtx.editIndex] = {...arr[fileCtx.editIndex], ...obj};
+  }else{
+    arr.unshift(obj);
+  }
+  save();closeModal('fileModal');
+  const wasKind = fileCtx.kind;
+  fileCtx = null;
+  wasKind==='industry'?renderIndustry():renderProject();
+}
+function delFile(kind,key,i){
+  if(!confirm('删除这个文件条目？')) return;
+  const arr = kind==='industry'? state.work.industry[key].files : state.work.project[key].files;
+  arr.splice(i,1);save();
+  kind==='industry'?renderIndustry():renderProject();
+}
+function addSource(kind,key){
+  const name = prompt('来源名字：');if(!name) return;
+  const url = prompt('URL：');if(!url) return;
+  const note = prompt('备注（可空）：')||'';
+  state.work.industry[key].sources.push({name,url,note});
+  save();renderIndustry();
+}
+function delSource(kind,key,i){
+  if(!confirm('删除这个来源？')) return;
+  state.work.industry[key].sources.splice(i,1);save();renderIndustry();
+}
+function editSource(kind,key,i){
+  const s = state.work.industry[key].sources[i]; if(!s) return;
+  const name = prompt('来源名字：', s.name); if(name===null) return;
+  const url  = prompt('URL：', s.url);      if(url===null) return;
+  const note = prompt('备注（可空）：', s.note||''); if(note===null) return;
+  state.work.industry[key].sources[i] = {name:name.trim()||s.name, url:url.trim()||s.url, note:(note||'').trim()};
+  save();renderIndustry();
+}
+
+/* ========================================================================
+   自媒体
+   ======================================================================== */
+function renderMediaSources(){
+  document.getElementById('xhsSources').innerHTML = state.media.xhsSources.map((s,i)=>`
+    <div class="trend-src">
+      <div class="t-main">
+        <div class="t-name">${escape(s.name)}</div>
+        <div class="t-desc">${escape(s.note||s.url)}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn small ghost" onclick="window.open('${s.url}','_blank')">打开</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('dySources').innerHTML = state.media.dySources.map((s,i)=>`
+    <div class="trend-src">
+      <div class="t-main">
+        <div class="t-name">${escape(s.name)}</div>
+        <div class="t-desc">${escape(s.note||s.url)}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn small ghost" onclick="window.open('${s.url}','_blank')">打开</button>
+      </div>
+    </div>`).join('');
+  renderHot('xhs');renderHot('dy');
+}
+
+function renderHot(kind){
+  const arr = kind==='xhs' ? state.media.xhsHot : state.media.dyHot;
+  const listId = kind==='xhs' ? 'xhsHotList' : 'dyHotList';
+  const timeId = kind==='xhs' ? 'xhsRefreshedAt' : 'dyRefreshedAt';
+  const t = state.media.refreshedAt?.[kind]||'';
+  document.getElementById(timeId).innerText = t?`上次刷新：${t}`:'尚未刷新';
+  document.getElementById(listId).innerHTML = (arr||[]).map((it,i)=>`
+    <div class="hot-item">
+      <div class="hot-idx">${i+1}</div>
+      <div class="hot-body">
+        <div class="hot-title">${escape(it.title)}</div>
+        <div class="hot-meta">
+          <span class="pill">${escape(it.tag||'')}</span>
+          ${it.hint?escape(it.hint):''}
+        </div>
+      </div>
+      <button class="adopt" onclick="adoptHot('${kind}','${it.id}')">＋ 存进选题库</button>
+    </div>`).join('') || '<div class="empty">还没有热榜数据，点右上角「一键刷新」。</div>';
+}
+
+function adoptHot(kind, id){
+  const arr = kind==='xhs' ? state.media.xhsHot : state.media.dyHot;
+  const it = (arr||[]).find(x=>x.id===id);if(!it) return;
+  const plat = kind==='xhs'?'小红书':'抖音';
+  state.media.ideas.unshift({
+    id:'i_'+Date.now(),
+    title: it.title,
+    plat, prio:'P2 · 补充',
+    tag: it.tag||'',
+    note: it.hint||'',
+    ts: Date.now(),
+  });
+  save();renderIdeas();
+  // 视觉反馈
+  const btns = document.querySelectorAll('.adopt');
+  btns.forEach(b=>{if(b.getAttribute('onclick')?.includes(id)){b.innerText='已存入 ✓';b.disabled=true;}});
+}
+
+function refreshHot(kind){
+  const platName = kind==='xhs'?'小红书':'抖音';
+  const idPrefix = kind==='xhs'?'xh':'dh';
+  // 已存入选题库 + 上次热榜里的标题都拉进来做去重
+  const stored = ((state.media&&state.media.ideas)||[])
+    .filter(x=>!x.platform || x.platform===platName || x.platform==='通用')
+    .map(x=>x.title||x.hook).filter(Boolean);
+  const lastHot = ((state.media && (kind==='xhs'?state.media.xhsHot:state.media.dyHot))||[])
+    .map(x=>x.title).filter(Boolean);
+  // 去重合并 + 截断，避免 prompt 过长
+  const seen = [...new Set([...stored,...lastHot])].slice(0,60);
+  const avoidBlock = seen.length
+    ? `\n\n【务必去重】以下 ${seen.length} 条选题我最近已经看过或存过，本次请不要重复（含近似同义改写也算重复）：\n${seen.map((t,i)=>`- ${t}`).join('\n')}\n`
+    : '';
+  const prompt = `请帮我抓取【${platName}】当前 top15 热门选题（时间：${new Date().toISOString().slice(0,10)}），我是「就妙啊」——29岁，杭州，1688 产业带小二，覆盖玩具/宠物/个护家清/美妆四大行业，主要人设是「产业带幕后 + 内观向 + 职场女性」。请优先返回跟这些方向能打通的热门选题。${avoidBlock}
+本轮请全部返回**新的**、我没见过的选题；如果实在没新东西，可以给"角度变体"（同一话题换一个入口切法），但标题必须明显区别于上面清单。
+
+严格按照以下 JSON 数组格式返回，直接粘贴给我即可：
+[
+  {"id":"${idPrefix}1","title":"选题标题","tag":"标签","hint":"我可以怎么切"},
+  ... 共 15 条
+]`;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    alert(`「${platName} 一键刷新」提示词已复制到剪贴板 ✓（已附带 ${seen.length} 条去重清单）\n\n请：\n1. 打开 QoderWork 对话框\n2. 粘贴（Cmd/Ctrl + V）发送给 Q\n3. Q 返回 JSON 后，回到工作台点【导入】把 JSON 贴进去\n\n若暂时不想找 Q 帮忙，可以点右下角"更多深挖入口"手动浏览。`);
+  }).catch(()=>{
+    prompt_fallback(prompt);
+  });
+}
+function prompt_fallback(text){
+  const w = window.open('','_blank');
+  w.document.write('<pre style="white-space:pre-wrap;font-family:sans-serif;padding:20px;">'+text+'</pre>');
+}
+
+function importHotJSON(kind){
+  const raw = window.prompt(`把 Q 返回的 JSON 数组粘贴进来：`);
+  if(!raw) return;
+  try{
+    let arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) throw new Error('必须是数组');
+    // 本地二次去重：把与选题库 / 上一次热榜标题完全或高度相似的过滤掉
+    const norm = s => (s||'').toLowerCase().replace(/[\s\u3000·\-—。，,.!！?？:：""''《》()（）\[\]【】]/g,'');
+    const platName = kind==='xhs'?'小红书':'抖音';
+    const known = new Set([
+      ...(((state.media&&state.media.ideas)||[])
+          .filter(x=>!x.platform || x.platform===platName || x.platform==='通用')
+          .map(x=>norm(x.title||x.hook))),
+      ...(((state.media && (kind==='xhs'?state.media.xhsHot:state.media.dyHot))||[])
+          .map(x=>norm(x.title))),
+    ].filter(Boolean));
+    const before = arr.length;
+    arr = arr.filter(x=>x && x.title && !known.has(norm(x.title)));
+    const dedup = before - arr.length;
+    if(kind==='xhs') state.media.xhsHot = arr;
+    else state.media.dyHot = arr;
+    state.media.refreshedAt = state.media.refreshedAt||{};
+    state.media.refreshedAt[kind] = new Date().toISOString().slice(0,16).replace('T',' ');
+    save();renderHot(kind);
+    alert(`已更新 ${arr.length} 条热门选题 ✓` + (dedup?`（自动过滤了 ${dedup} 条重复）`:''));
+  }catch(e){alert('JSON 格式不对：'+e.message);}
+}
+
+function delMediaSrc(kind,i){
+  if(!confirm('删除？')) return;
+  (kind==='xhs'?state.media.xhsSources:state.media.dySources).splice(i,1);
+  save();renderMediaSources();
+}
+let iFilter='全部';
+function filterIdeas(p,btn){
+  iFilter=p;
+  document.querySelectorAll('.filter-bar .chip').forEach(x=>{
+    if(x.dataset.plat!==undefined) x.classList.toggle('on',x===btn);
+  });
+  renderIdeas();
+}
+function renderIdeas(){
+  const term = (document.getElementById('iSearch').value||'').toLowerCase();
+  const list = state.media.ideas
+    .filter(x=>iFilter==='全部'||x.plat===iFilter)
+    .filter(x=>!term||[x.title,x.tag,x.note].join(' ').toLowerCase().includes(term))
+    .sort((a,b)=>b.ts-a.ts);
+  const box = document.getElementById('ideasList');
+  if(!list.length){box.innerHTML='<div class="empty">还没有选题。刷完热榜有感觉的方向就来这里记一笔。</div>';return;}
+  box.innerHTML = list.map(x=>`
+    <div class="quote">
+      <div class="q-text" style="font-size:15px;">${escape(x.title)}</div>
+      <div class="q-meta">
+        <span class="pill">${escape(x.plat)}</span>
+        <span class="pill">${escape(x.prio)}</span>
+        ${(x.tag||'').split(',').filter(Boolean).map(t=>`<span class="pill">#${escape(t.trim())}</span>`).join('')}
+      </div>
+      ${x.note?`<div class="q-note">${escape(x.note)}</div>`:''}
+      <div class="q-actions">
+        <button class="btn small ghost" onclick="editIdea('${x.id}')">编辑</button>
+        <button class="btn small danger" onclick="delIdea('${x.id}')">删</button>
+      </div>
+    </div>`).join('');
+}
+function openIdeaModal(){
+  editingIdeaId = null;
+  document.getElementById('imTitle') && (document.getElementById('imTitle').innerText='新的选题');
+  ['iTitle','iTag','iNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('iPlat').value='小红书';
+  document.getElementById('iPrio').value='P1 · 本月发';
+  openModal('ideaModal');
+}
+let editingIdeaId = null;
+function editIdea(id){
+  const x = (state.media.ideas||[]).find(i=>i.id===id); if(!x) return;
+  editingIdeaId = id;
+  document.getElementById('imTitle') && (document.getElementById('imTitle').innerText='编辑选题');
+  document.getElementById('iTitle').value = x.title||'';
+  document.getElementById('iPlat').value  = x.plat||'小红书';
+  document.getElementById('iPrio').value  = x.prio||'P1 · 本月发';
+  document.getElementById('iTag').value   = x.tag||'';
+  document.getElementById('iNote').value  = x.note||'';
+  openModal('ideaModal');
+}
+function saveIdea(){
+  const title = document.getElementById('iTitle').value.trim();
+  if(!title){alert('标题不能空');return;}
+  const patch = {
+    title,
+    plat:document.getElementById('iPlat').value,
+    prio:document.getElementById('iPrio').value,
+    tag:document.getElementById('iTag').value.trim(),
+    note:document.getElementById('iNote').value.trim(),
+    ts:Date.now(),
+  };
+  if(editingIdeaId){
+    const i = state.media.ideas.findIndex(x=>x.id===editingIdeaId);
+    if(i>=0) state.media.ideas[i] = {...state.media.ideas[i], ...patch};
+    editingIdeaId = null;
+  }else{
+    state.media.ideas.unshift({id:'i_'+Date.now(), ...patch});
+  }
+  save();closeModal('ideaModal');renderIdeas();
+}
+function delIdea(id){
+  if(!confirm('删除这个选题？')) return;
+  state.media.ideas = state.media.ideas.filter(x=>x.id!==id);
+  save();renderIdeas();
+}
+
+/* ========================================================================
+   玄学 & 文玩 知识
+   ======================================================================== */
+const WW_SVG = {
+  jingang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="jg" cx="35%" cy="35%"><stop offset="0" stop-color="#B47142"/><stop offset="1" stop-color="#5A2D14"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#jg)"/><g stroke="#3E1E0B" stroke-width="1.4" fill="none" opacity=".7"><path d="M32 8 Q40 20 32 32 Q24 44 32 56"/><path d="M8 32 Q20 24 32 32 Q44 40 56 32"/><path d="M15 15 Q28 28 32 32 Q36 36 49 49"/><path d="M49 15 Q36 28 32 32 Q28 36 15 49"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#2A1006" stroke-width="1.5"/></svg>`,
+  xingyue: `<svg viewBox="0 0 64 64"><defs><radialGradient id="xy" cx="40%" cy="40%"><stop offset="0" stop-color="#F5EED8"/><stop offset="1" stop-color="#B39F7A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#xy)"/><circle cx="32" cy="32" r="4" fill="#3E2E1B"/><g fill="#5A4530"><circle cx="16" cy="24" r="1"/><circle cx="20" cy="14" r="1"/><circle cx="30" cy="12" r="1"/><circle cx="42" cy="16" r="1"/><circle cx="50" cy="24" r="1"/><circle cx="52" cy="36" r="1"/><circle cx="48" cy="46" r="1"/><circle cx="38" cy="52" r="1"/><circle cx="24" cy="52" r="1"/><circle cx="14" cy="44" r="1"/><circle cx="12" cy="34" r="1"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#7D6743" stroke-width="1.2"/></svg>`,
+  fengyan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="fy" cx="40%" cy="40%"><stop offset="0" stop-color="#C89966"/><stop offset="1" stop-color="#6B4325"/></radialGradient></defs><ellipse cx="32" cy="32" rx="24" ry="26" fill="url(#fy)"/><path d="M20 30 Q32 22 44 30 Q32 38 20 30 Z" fill="#3E2311" stroke="#1E0F04" stroke-width="1"/><ellipse cx="32" cy="30" rx="4" ry="1.5" fill="#F5DFC3"/><ellipse cx="32" cy="32" rx="24" ry="26" fill="none" stroke="#3E2311" stroke-width="1.2"/></svg>`,
+  longyan: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#8B4A25"/><path d="M22 34 L32 22 L42 34 Z" fill="#2C1204" stroke="#1A0800" stroke-width="1"/><circle cx="32" cy="30" r="1.5" fill="#F0C88C"/><circle cx="32" cy="32" r="26" fill="none" stroke="#3B1A08" stroke-width="1.2"/></svg>`,
+  qilinyan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ql" cx="40%" cy="40%"><stop offset="0" stop-color="#B87A47"/><stop offset="1" stop-color="#5B2D0F"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#ql)"/><g fill="none" stroke="#2E1104" stroke-width=".8" opacity=".6"><path d="M14 32 Q22 28 32 32 Q42 36 50 32"/><path d="M14 40 Q22 36 32 40 Q42 44 50 40"/><path d="M14 24 Q22 20 32 24 Q42 28 50 24"/><path d="M20 14 Q28 20 20 26"/><path d="M44 14 Q36 20 44 26"/><path d="M20 50 Q28 44 20 38"/><path d="M44 50 Q36 44 44 38"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#2A0F04" stroke-width="1.2"/></svg>`,
+  baiyu: `<svg viewBox="0 0 64 64"><defs><radialGradient id="by" cx="40%" cy="40%"><stop offset="0" stop-color="#FFFCF3"/><stop offset="1" stop-color="#C7B896"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#by)"/><circle cx="32" cy="32" r="26" fill="none" stroke="#8A785A" stroke-width="1.2"/></svg>`,
+  taiyang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ty" cx="50%" cy="50%"><stop offset="0" stop-color="#F5C77A"/><stop offset="1" stop-color="#8A5124"/></radialGradient></defs><circle cx="32" cy="32" r="20" fill="url(#ty)"/><g stroke="#5C3A1B" stroke-width="1.5" stroke-linecap="round"><line x1="32" y1="4" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="60"/><line x1="4" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="60" y2="32"/><line x1="12" y1="12" x2="17" y2="17"/><line x1="47" y1="47" x2="52" y2="52"/><line x1="52" y1="12" x2="47" y2="17"/><line x1="12" y1="52" x2="17" y2="47"/></g><circle cx="32" cy="32" r="20" fill="none" stroke="#3E240B" stroke-width="1.2"/></svg>`,
+  putigen: `<svg viewBox="0 0 64 64"><defs><radialGradient id="pg" cx="40%" cy="40%"><stop offset="0" stop-color="#EBD5A9"/><stop offset="1" stop-color="#8A6A3F"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#pg)"/><g stroke="#4A3417" stroke-width=".8" fill="none" opacity=".6"><path d="M20 20 Q32 24 44 20"/><path d="M18 30 Q32 26 46 30"/><path d="M20 40 Q32 44 44 40"/><path d="M20 20 Q22 32 20 44"/><path d="M44 20 Q42 32 44 44"/><path d="M32 12 Q32 32 32 52"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#5C4224" stroke-width="1.2"/></svg>`,
+
+  zitan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="zt" cx="40%" cy="40%"><stop offset="0" stop-color="#8B3A3A"/><stop offset="1" stop-color="#3E1414"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#zt)"/><g stroke="#1A0505" stroke-width=".6" opacity=".5" fill="none"><path d="M12 22 Q32 20 52 22"/><path d="M12 30 Q32 28 52 30"/><path d="M12 38 Q32 36 52 38"/><path d="M12 46 Q32 44 52 46"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#1A0505" stroke-width="1.2"/></svg>`,
+  huanghuali: `<svg viewBox="0 0 64 64"><defs><radialGradient id="hh" cx="40%" cy="40%"><stop offset="0" stop-color="#D4A867"/><stop offset="1" stop-color="#7B5121"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#hh)"/><ellipse cx="26" cy="28" rx="4" ry="6" fill="#4A2E10" opacity=".7"/><ellipse cx="26" cy="28" rx="1.5" ry="2" fill="#F5D9A5"/><ellipse cx="40" cy="38" rx="3" ry="4" fill="#4A2E10" opacity=".6"/><ellipse cx="40" cy="38" rx="1" ry="1.5" fill="#F5D9A5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#3B2109" stroke-width="1.2"/></svg>`,
+  chenxiang: `<svg viewBox="0 0 64 64"><defs><linearGradient id="cx" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5C3B22"/><stop offset="1" stop-color="#1E0E04"/></linearGradient></defs><circle cx="32" cy="32" r="26" fill="url(#cx)"/><path d="M28 12 Q30 20 32 24 Q34 28 30 34 Q28 40 32 46 Q34 50 30 56" stroke="#F5C77A" stroke-width="1" fill="none" opacity=".5"/><path d="M20 8 Q22 20 26 30 Q28 40 24 52" stroke="#EAB877" stroke-width=".8" fill="none" opacity=".4"/><circle cx="32" cy="32" r="26" fill="none" stroke="#0E0602" stroke-width="1.2"/></svg>`,
+  tanxiang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="tx" cx="40%" cy="40%"><stop offset="0" stop-color="#E8CFA5"/><stop offset="1" stop-color="#9B7845"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#tx)"/><g stroke="#5C4020" stroke-width=".6" opacity=".4" fill="none"><path d="M14 20 Q32 22 50 20"/><path d="M14 32 Q32 34 50 32"/><path d="M14 44 Q32 42 50 44"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3B2A16" stroke-width="1.2"/></svg>`,
+  yaibai: `<svg viewBox="0 0 64 64"><defs><radialGradient id="yb" cx="40%" cy="40%"><stop offset="0" stop-color="#A8956A"/><stop offset="1" stop-color="#4E4020"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#yb)"/><g stroke="#211A08" stroke-width=".7" fill="none" opacity=".55"><ellipse cx="32" cy="32" rx="20" ry="8"/><ellipse cx="32" cy="32" rx="14" ry="5"/><ellipse cx="32" cy="32" rx="8" ry="3"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#211A08" stroke-width="1.2"/></svg>`,
+  jinsinan: `<svg viewBox="0 0 64 64"><defs><linearGradient id="js" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A6E38"/><stop offset=".5" stop-color="#D9BA6E"/><stop offset="1" stop-color="#7A5A24"/></linearGradient></defs><circle cx="32" cy="32" r="26" fill="url(#js)"/><g stroke="#F0DA9A" stroke-width=".6" fill="none" opacity=".7"><path d="M14 16 Q32 20 50 16"/><path d="M14 24 Q32 28 50 24"/><path d="M14 32 Q32 36 50 32"/><path d="M14 40 Q32 44 50 40"/><path d="M14 48 Q32 52 50 48"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3E2E14" stroke-width="1.2"/></svg>`,
+  ziguang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="zg" cx="30%" cy="30%"><stop offset="0" stop-color="#5C3E5C"/><stop offset=".7" stop-color="#1A0E1A"/><stop offset="1" stop-color="#000"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#zg)"/><ellipse cx="24" cy="22" rx="5" ry="3" fill="#7A5A7A" opacity=".5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#0A050A" stroke-width="1.2"/></svg>`,
+
+  hetian: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ht" cx="40%" cy="40%"><stop offset="0" stop-color="#FEFDF5"/><stop offset="1" stop-color="#D4C9A5"/></radialGradient></defs><ellipse cx="32" cy="32" rx="26" ry="22" fill="url(#ht)"/><path d="M16 16 Q22 22 30 20" stroke="#B89857" stroke-width="1.2" fill="none" opacity=".5"/><path d="M40 44 Q46 40 52 46" stroke="#A88657" stroke-width="1" fill="none" opacity=".4"/><ellipse cx="32" cy="32" rx="26" ry="22" fill="none" stroke="#8A754A" stroke-width="1.2"/></svg>`,
+  nanhong: `<svg viewBox="0 0 64 64"><defs><radialGradient id="nh" cx="40%" cy="40%"><stop offset="0" stop-color="#EA6740"/><stop offset="1" stop-color="#8A2010"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#nh)"/><ellipse cx="24" cy="22" rx="6" ry="4" fill="#F5A088" opacity=".5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#5A0F04" stroke-width="1.2"/></svg>`,
+  feicui: `<svg viewBox="0 0 64 64"><defs><radialGradient id="fc" cx="40%" cy="40%"><stop offset="0" stop-color="#B0E5C7"/><stop offset="1" stop-color="#2E7A5A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#fc)"/><ellipse cx="24" cy="22" rx="6" ry="3" fill="#E5F5E5" opacity=".7"/><path d="M14 40 Q32 44 50 40" stroke="#1E5A3A" stroke-width=".8" fill="none" opacity=".5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#0E4022" stroke-width="1.2"/></svg>`,
+  lvsong: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ls" cx="40%" cy="40%"><stop offset="0" stop-color="#77CCC5"/><stop offset="1" stop-color="#2A6A6A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#ls)"/><g stroke="#1A2A2A" stroke-width=".7" fill="none" opacity=".6"><path d="M14 24 Q22 30 32 24 Q42 18 50 24"/><path d="M14 40 Q22 34 32 40 Q42 46 50 40"/><path d="M20 14 Q26 22 22 32 Q26 42 20 50"/><path d="M44 14 Q38 22 42 32 Q38 42 44 50"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#0A2020" stroke-width="1.2"/></svg>`,
+  milla: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ml" cx="40%" cy="40%"><stop offset="0" stop-color="#FFE59A"/><stop offset="1" stop-color="#B47526"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#ml)"/><ellipse cx="24" cy="22" rx="6" ry="3.5" fill="#FFF4C5" opacity=".7"/><g fill="#8B4E10" opacity=".4"><ellipse cx="42" cy="40" rx="2" ry="1.5"/><ellipse cx="20" cy="42" rx="1.5" ry="1"/><ellipse cx="38" cy="24" rx="2" ry="1"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#6A3E10" stroke-width="1.2"/></svg>`,
+  qingjin: `<svg viewBox="0 0 64 64"><defs><radialGradient id="qj" cx="40%" cy="40%"><stop offset="0" stop-color="#3B4E9C"/><stop offset="1" stop-color="#0F1E4A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#qj)"/><g fill="#F5D67A"><circle cx="20" cy="20" r="1"/><circle cx="30" cy="14" r="1"/><circle cx="42" cy="18" r="1.2"/><circle cx="48" cy="30" r="1"/><circle cx="46" cy="44" r="1"/><circle cx="34" cy="50" r="1.2"/><circle cx="20" cy="46" r="1"/><circle cx="14" cy="34" r="1"/><circle cx="26" cy="34" r="1"/><circle cx="38" cy="34" r="1"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#050C24" stroke-width="1.2"/></svg>`,
+
+  laoyin: `<svg viewBox="0 0 64 64"><defs><radialGradient id="ly" cx="40%" cy="40%"><stop offset="0" stop-color="#E5E5DA"/><stop offset="1" stop-color="#8A8A75"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#ly)"/><path d="M22 22 Q32 32 42 22 Q32 42 22 22 Z" fill="#5A5A45" opacity=".5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#5A5A45" stroke-width="1.2"/></svg>`,
+  zangyin: `<svg viewBox="0 0 64 64"><defs><radialGradient id="zy2" cx="40%" cy="40%"><stop offset="0" stop-color="#C5C0B0"/><stop offset="1" stop-color="#6E695C"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#zy2)"/><circle cx="32" cy="32" r="8" fill="#8B0F26"/><circle cx="32" cy="32" r="4" fill="#F5D67A"/><g stroke="#4A4535" stroke-width=".7" fill="none"><path d="M14 32 L20 32"/><path d="M44 32 L50 32"/><path d="M32 14 L32 20"/><path d="M32 44 L32 50"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3E3A2E" stroke-width="1.2"/></svg>`,
+  huangtong: `<svg viewBox="0 0 64 64"><defs><radialGradient id="hty" cx="40%" cy="40%"><stop offset="0" stop-color="#F5D77A"/><stop offset="1" stop-color="#8A6220"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#hty)"/><ellipse cx="26" cy="24" rx="6" ry="3" fill="#FFEEB5" opacity=".5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#4A3410" stroke-width="1.2"/></svg>`,
+  baitong: `<svg viewBox="0 0 64 64"><defs><radialGradient id="bt" cx="40%" cy="40%"><stop offset="0" stop-color="#F0EEE0"/><stop offset="1" stop-color="#9E9A8A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#bt)"/><circle cx="32" cy="32" r="26" fill="none" stroke="#5C5A4A" stroke-width="1.2"/></svg>`,
+
+  jiegang: `<svg viewBox="0 0 64 64"><path d="M8 16 Q16 20 24 16 T40 16 T56 16" stroke="#8A5124" stroke-width="2" fill="none"/><path d="M8 32 Q16 36 24 32 T40 32 T56 32" stroke="#B47142" stroke-width="2" fill="none"/><path d="M8 48 Q16 52 24 48 T40 48 T56 48" stroke="#8A5124" stroke-width="2" fill="none"/><g fill="#5C3418"><circle cx="16" cy="16" r="2"/><circle cx="32" cy="16" r="2"/><circle cx="48" cy="16" r="2"/><circle cx="16" cy="32" r="2"/><circle cx="32" cy="32" r="2"/><circle cx="48" cy="32" r="2"/><circle cx="16" cy="48" r="2"/><circle cx="32" cy="48" r="2"/><circle cx="48" cy="48" r="2"/></g></svg>`,
+  shengcai: `<svg viewBox="0 0 64 64"><g stroke-width="3" stroke-linecap="round" fill="none"><path d="M8 20 L56 20" stroke="#B47142"/><path d="M8 32 L56 32" stroke="#5A3418"/><path d="M8 44 L56 44" stroke="#D4A867"/></g><g fill="#3E2311" font-size="7" font-family="serif"><text x="10" y="16">玉</text><text x="10" y="28">A</text><text x="10" y="52">棉</text></g></svg>`,
+  chuanzhu: `<svg viewBox="0 0 64 64"><path d="M12 32 Q22 20 32 32 Q42 44 52 32" stroke="#8A5124" stroke-width="1.5" fill="none"/><g fill="#B47142"><circle cx="12" cy="32" r="4"/><circle cx="22" cy="24" r="4"/><circle cx="32" cy="32" r="5"/><circle cx="42" cy="40" r="4"/><circle cx="52" cy="32" r="4"/></g><circle cx="32" cy="32" r="5" fill="none" stroke="#5A3418" stroke-width="1"/></svg>`,
+  guige: `<svg viewBox="0 0 64 64"><g fill="#B47142"><circle cx="14" cy="32" r="3"/><circle cx="21" cy="32" r="3"/><circle cx="28" cy="32" r="3"/><circle cx="35" cy="32" r="3"/><circle cx="42" cy="32" r="3"/><circle cx="49" cy="32" r="3"/></g><text x="12" y="52" fill="#5A3418" font-size="8" font-family="sans-serif">15颗</text></svg>`,
+
+  sanji: `<svg viewBox="0 0 64 64"><g fill="none" stroke-width="2"><circle cx="20" cy="20" r="10" stroke="#B8503A"/><line x1="14" y1="14" x2="26" y2="26" stroke="#B8503A"/><circle cx="44" cy="20" r="10" stroke="#B8503A"/><line x1="38" y1="14" x2="50" y2="26" stroke="#B8503A"/><circle cx="32" cy="46" r="10" stroke="#B8503A"/><line x1="26" y1="40" x2="38" y2="52" stroke="#B8503A"/></g></svg>`,
+  baojiang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="bj" cx="30%" cy="30%"><stop offset="0" stop-color="#F5DFA8"/><stop offset=".5" stop-color="#B47142"/><stop offset="1" stop-color="#4A2311"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#bj)"/><ellipse cx="22" cy="20" rx="6" ry="3" fill="#FFEEC5" opacity=".8"/><circle cx="32" cy="32" r="26" fill="none" stroke="#2A0F04" stroke-width="1.2"/></svg>`,
+  shuapan: `<svg viewBox="0 0 64 64"><rect x="10" y="18" width="20" height="8" fill="#8A5124"/><g stroke="#3E2311" stroke-width="1"><line x1="12" y1="26" x2="12" y2="34"/><line x1="16" y1="26" x2="16" y2="34"/><line x1="20" y1="26" x2="20" y2="34"/><line x1="24" y1="26" x2="24" y2="34"/><line x1="28" y1="26" x2="28" y2="34"/></g><circle cx="46" cy="42" r="10" fill="#B47142" stroke="#3E2311"/></svg>`,
+  mifeng: `<svg viewBox="0 0 64 64"><rect x="12" y="12" width="40" height="40" fill="#EBD5A9" stroke="#5A3418" stroke-width="1.5"/><path d="M12 20 L52 20" stroke="#5A3418" stroke-width="1"/><g fill="#B47142"><circle cx="24" cy="34" r="4"/><circle cx="34" cy="34" r="4"/><circle cx="44" cy="34" r="4"/></g></svg>`,
+  dayan: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="none" stroke="#B8503A" stroke-width="2.5"/><circle cx="32" cy="32" r="4" fill="#B8503A"/><g stroke="#B8503A" stroke-width="2" stroke-linecap="round"><line x1="32" y1="10" x2="32" y2="16"/><line x1="32" y1="48" x2="32" y2="54"/><line x1="10" y1="32" x2="16" y2="32"/><line x1="48" y1="32" x2="54" y2="32"/></g></svg>`,
+
+  // v1.3 新增
+  lianhua: `<svg viewBox="0 0 64 64"><defs><radialGradient id="lh" cx="40%" cy="40%"><stop offset="0" stop-color="#F0DABC"/><stop offset="1" stop-color="#8A5A28"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#lh)"/><g stroke="#4A2E10" stroke-width=".8" fill="none" opacity=".7"><path d="M32 12 Q28 24 32 32 Q36 24 32 12"/><path d="M12 32 Q24 28 32 32 Q24 36 12 32"/><path d="M52 32 Q40 28 32 32 Q40 36 52 32"/><path d="M18 18 Q24 26 32 32 Q26 26 18 18"/><path d="M46 18 Q40 26 32 32 Q38 26 46 18"/><path d="M18 46 Q24 38 32 32 Q26 38 18 46"/><path d="M46 46 Q40 38 32 32 Q38 38 46 46"/></g><circle cx="32" cy="32" r="4" fill="#5A3418"/><circle cx="32" cy="32" r="26" fill="none" stroke="#3E2311" stroke-width="1.2"/></svg>`,
+  jinchan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="jc" cx="40%" cy="40%"><stop offset="0" stop-color="#EDC066"/><stop offset="1" stop-color="#8A5A18"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#jc)"/><g fill="#5A3410" opacity=".55"><circle cx="20" cy="22" r="2"/><circle cx="30" cy="18" r="2"/><circle cx="42" cy="22" r="2"/><circle cx="18" cy="34" r="2"/><circle cx="30" cy="32" r="2"/><circle cx="44" cy="34" r="2"/><circle cx="22" cy="46" r="2"/><circle cx="34" cy="44" r="2"/><circle cx="44" cy="46" r="2"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3E2410" stroke-width="1.2"/></svg>`,
+  xuetan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="xt2" cx="40%" cy="40%"><stop offset="0" stop-color="#B03A3A"/><stop offset="1" stop-color="#3E0A0A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#xt2)"/><g stroke="#1A0404" stroke-width=".7" opacity=".55" fill="none"><path d="M14 24 Q32 20 50 24"/><path d="M14 34 Q32 30 50 34"/><path d="M14 44 Q32 40 50 44"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#1A0404" stroke-width="1.2"/></svg>`,
+  lvtan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="lt2" cx="40%" cy="40%"><stop offset="0" stop-color="#94A860"/><stop offset="1" stop-color="#3A4A18"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#lt2)"/><g stroke="#1E2A08" stroke-width=".6" opacity=".5" fill="none"><path d="M14 22 Q32 26 50 22"/><path d="M14 32 Q32 36 50 32"/><path d="M14 42 Q32 46 50 42"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#1E2A08" stroke-width="1.2"/></svg>`,
+  ganlan: `<svg viewBox="0 0 64 64"><defs><radialGradient id="gl" cx="40%" cy="40%"><stop offset="0" stop-color="#B87A48"/><stop offset="1" stop-color="#4A2811"/></radialGradient></defs><ellipse cx="32" cy="32" rx="18" ry="26" fill="url(#gl)"/><g stroke="#2A1408" stroke-width=".8" opacity=".55" fill="none"><path d="M20 14 Q22 32 20 50"/><path d="M32 8 Q34 32 32 56"/><path d="M44 14 Q42 32 44 50"/></g><ellipse cx="32" cy="32" rx="18" ry="26" fill="none" stroke="#2A1408" stroke-width="1.2"/></svg>`,
+  bixi: `<svg viewBox="0 0 64 64"><defs><linearGradient id="bx" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EA6688"/><stop offset=".5" stop-color="#F5D67A"/><stop offset="1" stop-color="#4CB58A"/></linearGradient></defs><circle cx="32" cy="32" r="26" fill="url(#bx)"/><ellipse cx="26" cy="24" rx="5" ry="3" fill="#FFF" opacity=".55"/><circle cx="32" cy="32" r="26" fill="none" stroke="#3A2A28" stroke-width="1.2"/></svg>`,
+  yueguang: `<svg viewBox="0 0 64 64"><defs><radialGradient id="yg" cx="35%" cy="35%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#C5D5F0"/><stop offset="1" stop-color="#5A6E9E"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#yg)"/><ellipse cx="26" cy="22" rx="8" ry="4" fill="#FFF" opacity=".65"/><circle cx="32" cy="32" r="26" fill="none" stroke="#2E3E5C" stroke-width="1.2"/></svg>`,
+  shuijing: `<svg viewBox="0 0 64 64"><defs><linearGradient id="sj" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0F5FF"/><stop offset="1" stop-color="#8A9AC5"/></linearGradient></defs><polygon points="32,8 50,32 32,56 14,32" fill="url(#sj)" stroke="#2E3E5C" stroke-width="1.2"/><line x1="32" y1="8" x2="32" y2="56" stroke="#B0BEDD" stroke-width=".8"/><line x1="14" y1="32" x2="50" y2="32" stroke="#B0BEDD" stroke-width=".8"/></svg>`,
+  shanhu: `<svg viewBox="0 0 64 64"><defs><radialGradient id="sh" cx="40%" cy="40%"><stop offset="0" stop-color="#F58877"/><stop offset="1" stop-color="#8A2010"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#sh)"/><g stroke="#5A0F04" stroke-width="1.2" fill="none" opacity=".55"><path d="M32 14 Q28 22 32 30 M32 30 Q36 26 40 22 M32 30 Q28 26 24 22"/><path d="M32 30 Q30 40 32 50 M32 50 Q36 46 40 42 M32 50 Q28 46 24 42"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3A0705" stroke-width="1.2"/></svg>`,
+  yinfa: `<svg viewBox="0 0 64 64"><defs><radialGradient id="yf" cx="40%" cy="40%"><stop offset="0" stop-color="#F0EEE0"/><stop offset="1" stop-color="#7A7A6A"/></radialGradient></defs><circle cx="32" cy="32" r="26" fill="url(#yf)"/><g stroke="#3E3A2E" stroke-width=".6" opacity=".7" fill="none"><path d="M12 16 L52 48"/><path d="M14 22 L50 42"/><path d="M12 30 L52 34"/><path d="M14 40 L50 26"/><path d="M18 48 L46 16"/></g><circle cx="32" cy="32" r="26" fill="none" stroke="#3E3A2E" stroke-width="1.2"/></svg>`,
+  yinbao: `<svg viewBox="0 0 64 64"><g><circle cx="32" cy="32" r="18" fill="#8A5A28"/><path d="M14 28 Q14 22 20 22 L44 22 Q50 22 50 28 L50 36 Q50 42 44 42 L20 42 Q14 42 14 36 Z" fill="none" stroke="#3E2E14" stroke-width="1"/><path d="M14 28 L20 22 M50 28 L44 22 M14 36 L20 42 M50 36 L44 42" stroke="#5A5A45" stroke-width="1"/></g><g fill="#D4CFB8"><rect x="10" y="26" width="6" height="12"/><rect x="48" y="26" width="6" height="12"/></g></svg>`,
+  santong: `<svg viewBox="0 0 64 64"><g fill="#8A5124"><ellipse cx="32" cy="26" rx="10" ry="8"/><rect x="28" y="30" width="8" height="10"/><ellipse cx="32" cy="42" rx="8" ry="4"/></g><line x1="32" y1="10" x2="32" y2="18" stroke="#5A3418" stroke-width="1.5"/><g fill="#B47142"><circle cx="14" cy="30" r="3"/><circle cx="20" cy="24" r="3"/><circle cx="50" cy="30" r="3"/><circle cx="44" cy="24" r="3"/></g></svg>`,
+  beiyun: `<svg viewBox="0 0 64 64"><g fill="#8A5124"><ellipse cx="32" cy="18" rx="8" ry="6"/><rect x="28" y="22" width="8" height="8"/></g><path d="M28 30 Q26 40 24 50 M32 30 Q32 42 32 54 M36 30 Q38 40 40 50" stroke="#5A3418" stroke-width="1" fill="none"/><g fill="#B47142"><circle cx="26" cy="52" r="1.5"/><circle cx="32" cy="56" r="1.5"/><circle cx="38" cy="52" r="1.5"/></g></svg>`,
+  xiangdao: `<svg viewBox="0 0 64 64"><rect x="20" y="42" width="24" height="10" rx="2" fill="#8A5124" stroke="#3E2311"/><ellipse cx="32" cy="42" rx="12" ry="3" fill="#5A3418"/><path d="M30 42 Q30 24 32 12 M34 42 Q34 26 30 14" stroke="#B47142" stroke-width="1.2" fill="none" opacity=".7"/><path d="M28 20 Q32 14 36 20" stroke="#B47142" stroke-width="1" fill="none" opacity=".5"/></svg>`,
+  xiangju: `<svg viewBox="0 0 64 64"><rect x="14" y="40" width="16" height="12" fill="#8A5124" stroke="#3E2311"/><ellipse cx="22" cy="40" rx="8" ry="2" fill="#5A3418"/><line x1="36" y1="14" x2="36" y2="52" stroke="#8A5124" stroke-width="1.5"/><line x1="42" y1="14" x2="42" y2="52" stroke="#8A5124" stroke-width="1.5"/><line x1="48" y1="14" x2="48" y2="52" stroke="#8A5124" stroke-width="1.5"/><path d="M32 14 L54 14" stroke="#3E2311" stroke-width="1"/></svg>`,
+  gehuo: `<svg viewBox="0 0 64 64"><rect x="16" y="36" width="32" height="16" rx="2" fill="#8A5124" stroke="#3E2311"/><rect x="20" y="38" width="24" height="10" fill="#4A2311"/><rect x="22" y="26" width="20" height="4" fill="#B0A88A" stroke="#5A5A45"/><g fill="#B47142"><rect x="26" y="30" width="12" height="6"/></g><path d="M28 20 Q32 14 36 20" stroke="#B47142" stroke-width="1.5" fill="none"/><path d="M30 22 Q32 18 34 22" stroke="#B47142" stroke-width="1" fill="none"/></svg>`,
+  xiangcai: `<svg viewBox="0 0 64 64"><g><rect x="10" y="24" width="10" height="16" fill="#5A3418" stroke="#2A1408"/><rect x="24" y="20" width="10" height="20" fill="#8A5124" stroke="#3E2311"/><rect x="38" y="16" width="10" height="24" fill="#B47142" stroke="#5A3418"/><rect x="52" y="24" width="8" height="16" fill="#3E1E0B" stroke="#1A0800"/></g><g font-size="6" font-family="serif" fill="#3E2311"><text x="10" y="50">沉</text><text x="24" y="50">檀</text><text x="38" y="50">乳</text><text x="52" y="50">安</text></g></svg>`,
+  hexiang: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="#EBD5A9" stroke="#5A3418" stroke-width="1.5"/><g fill="none" stroke="#8A5124" stroke-width="1"><path d="M32 8 L32 56"/><path d="M8 32 L56 32"/><path d="M14 14 L50 50"/><path d="M50 14 L14 50"/></g><circle cx="32" cy="32" r="6" fill="#8A5124"/></svg>`,
+  ranxiang: `<svg viewBox="0 0 64 64"><line x1="14" y1="50" x2="14" y2="14" stroke="#8A5124" stroke-width="2"/><path d="M12 12 Q14 8 16 12" stroke="#B47142" stroke-width="1.5" fill="none"/><path d="M32 42 A6 6 0 1 1 32 30 A3 3 0 1 1 32 36" fill="none" stroke="#8A5124" stroke-width="1.5"/><path d="M50 44 L54 20 L46 20 Z" fill="#8A5124" stroke="#3E2311" stroke-width="1"/></svg>`,
+  panwan: `<svg viewBox="0 0 64 64"><g><circle cx="16" cy="32" r="8" fill="#EBD5A9" stroke="#5A3418"/><circle cx="30" cy="32" r="8" fill="#D4A867" stroke="#5A3418"/><circle cx="44" cy="32" r="8" fill="#8A5124" stroke="#3E2311"/><circle cx="56" cy="32" r="4" fill="#3E1E0B" stroke="#1A0800"/></g><g stroke="#8A5124" stroke-width="1"><path d="M16 42 L20 46"/><path d="M30 42 L34 46"/><path d="M44 42 L48 46"/></g></svg>`,
+  xinnian: `<svg viewBox="0 0 64 64"><path d="M32 52 Q10 36 20 22 Q28 14 32 22 Q36 14 44 22 Q54 36 32 52 Z" fill="#B47142" stroke="#5A3418" stroke-width="1.5"/><circle cx="32" cy="30" r="4" fill="#F0DABC"/><circle cx="32" cy="30" r="4" fill="none" stroke="#3E2311" stroke-width=".6"/></svg>`,
+  yiwu: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="#B47142" stroke="#3E2311" stroke-width="1.5"/><ellipse cx="26" cy="26" rx="4" ry="2" fill="#FFEFC5" opacity=".7"/><g stroke="#8A5124" stroke-width="1" fill="none" opacity=".5"><path d="M8 8 L14 14"/><path d="M56 8 L50 14"/><path d="M8 56 L14 50"/><path d="M56 56 L50 50"/></g></svg>`,
+  jilu: `<svg viewBox="0 0 64 64"><rect x="10" y="12" width="44" height="40" rx="3" fill="#EBD5A9" stroke="#5A3418" stroke-width="1.5"/><g stroke="#8A5124" stroke-width="1"><line x1="16" y1="22" x2="48" y2="22"/><line x1="16" y1="30" x2="48" y2="30"/><line x1="16" y1="38" x2="40" y2="38"/><line x1="16" y1="46" x2="36" y2="46"/></g><circle cx="46" cy="46" r="3" fill="#B8503A"/></svg>`,
+  liuzhuan: `<svg viewBox="0 0 64 64"><g fill="none" stroke="#8A5124" stroke-width="1.5"><path d="M14 32 Q32 18 50 32 Q32 46 14 32 Z"/><path d="M20 32 Q32 24 44 32 Q32 40 20 32 Z"/></g><circle cx="14" cy="32" r="3" fill="#B47142"/><circle cx="50" cy="32" r="3" fill="#B47142"/><path d="M50 26 L56 26 L54 22 M50 38 L56 38 L54 42" stroke="#B47142" stroke-width="1.2" fill="none"/></svg>`,
+};
+
+let knowCtx=null;
+function renderMysticKnowledge(){
+  const list = (state.mystic.knowledge[curMyCat]||[]);
+  const box = document.getElementById('mysticKnowledgeBody');
+  box.innerHTML = list.length ? list.map(k=>`
+    <div class="know">
+      <div style="display:flex;justify-content:space-between;">
+        <h4>${escape(k.title)}</h4>
+        <div style="display:flex;gap:6px;">
+          <button class="btn small ghost" onclick="editKnow('mystic','${curMyCat}','${k.id}')">编辑</button>
+          <button class="btn small danger" onclick="delKnow('mystic','${curMyCat}','${k.id}')">删</button>
+        </div>
+      </div>
+      <p style="white-space:pre-wrap;">${escape(k.body)}</p>
+    </div>`).join('') : '<div class="empty">还没有内容，点上面「加一条」。</div>';
+}
+function renderWenwan(){
+  const list = (state.wenwan.knowledge[curWWCat]||[]);
+  const box = document.getElementById('wenwanBody');
+  const matCls = 'mat-'+curWWCat;
+  box.innerHTML = list.length ? list.map(k=>{
+    const svgHTML = k.svg && WW_SVG[k.svg] ? `<div class="know-svg ${matCls}">${WW_SVG[k.svg]}</div>` : '';
+    return `
+    <div class="know">
+      <div class="know-with-svg">
+        ${svgHTML}
+        <div class="know-body">
+          <div style="display:flex;justify-content:space-between;">
+            <h4>${escape(k.title)}</h4>
+            <div style="display:flex;gap:6px;">
+              <button class="btn small ghost" onclick="editKnow('wenwan','${curWWCat}','${k.id}')">编辑</button>
+              <button class="btn small danger" onclick="delKnow('wenwan','${curWWCat}','${k.id}')">删</button>
+            </div>
+          </div>
+          <p>${escape(k.body)}</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">还没有内容。</div>';
+}
+function openKnowModal(module){
+  const cat = module==='mystic'?curMyCat:curWWCat;
+  knowCtx={module,cat,id:null};
+  document.getElementById('kmTitle').innerText=`加一条·${cat}`;
+  document.getElementById('kTitle').value='';
+  document.getElementById('kCat').value=cat;
+  document.getElementById('kBody').value='';
+  openModal('knowModal');
+}
+function editKnow(module,cat,id){
+  const k = state[module].knowledge[cat].find(x=>x.id===id);if(!k) return;
+  knowCtx={module,cat,id};
+  document.getElementById('kmTitle').innerText=`编辑·${cat}`;
+  document.getElementById('kTitle').value=k.title;
+  document.getElementById('kCat').value=cat;
+  document.getElementById('kBody').value=k.body;
+  openModal('knowModal');
+}
+function saveKnow(){
+  const title = document.getElementById('kTitle').value.trim();
+  const body = document.getElementById('kBody').value.trim();
+  if(!title||!body){alert('标题和内容都要填');return;}
+  const arr = state[knowCtx.module].knowledge[knowCtx.cat] || (state[knowCtx.module].knowledge[knowCtx.cat]=[]);
+  if(knowCtx.id){
+    const i = arr.findIndex(x=>x.id===knowCtx.id);
+    arr[i]={...arr[i],title,body};
+  }else{
+    arr.unshift({id:'k_'+Date.now(),title,body});
+  }
+  save();closeModal('knowModal');
+  knowCtx.module==='mystic'?renderMysticKnowledge():renderWenwan();
+}
+function delKnow(module,cat,id){
+  if(!confirm('删除这条知识点？')) return;
+  state[module].knowledge[cat] = state[module].knowledge[cat].filter(x=>x.id!==id);
+  save();
+  module==='mystic'?renderMysticKnowledge():renderWenwan();
+}
+
+/* ========================================================================
+   命理自动生成算法（本地简化版，仅供参考）
+   ======================================================================== */
+const GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const ZODIAC_ANIMALS = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+const WX_GAN = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+const WX_ZHI = {'寅':'木','卯':'木','巳':'火','午':'火','辰':'土','戌':'土','丑':'土','未':'土','申':'金','酉':'金','子':'水','亥':'水'};
+
+const SIGN_NAMES = ['白羊','金牛','双子','巨蟹','狮子','处女','天秤','天蝎','射手','摩羯','水瓶','双鱼'];
+const SIGN_ELEMENT = ['火','土','风','水','火','土','风','水','火','土','风','水'];
+const SIGN_MODE = ['本位','固定','变动','本位','固定','变动','本位','固定','变动','本位','固定','变动'];
+
+// 太阳星座（返回索引 0-11）
+function sunSignIndex(m,d){
+  const cuts = [
+    {m:3,d:21,idx:0},{m:4,d:20,idx:1},{m:5,d:21,idx:2},{m:6,d:22,idx:3},
+    {m:7,d:23,idx:4},{m:8,d:23,idx:5},{m:9,d:23,idx:6},{m:10,d:23,idx:7},
+    {m:11,d:22,idx:8},{m:12,d:22,idx:9},{m:1,d:20,idx:10},{m:2,d:19,idx:11},
+  ];
+  for(const c of cuts){
+    if((m===c.m && d>=c.d) || (m===c.m+1 && d<cuts[(cuts.indexOf(c)+1)%12].d)){
+      // 简化：这个逻辑写起来乱，改用直接查
+    }
+  }
+  // 更清晰的实现
+  if((m===3 && d>=21) || (m===4 && d<=19)) return 0;
+  if((m===4 && d>=20) || (m===5 && d<=20)) return 1;
+  if((m===5 && d>=21) || (m===6 && d<=21)) return 2;
+  if((m===6 && d>=22) || (m===7 && d<=22)) return 3;
+  if((m===7 && d>=23) || (m===8 && d<=22)) return 4;
+  if((m===8 && d>=23) || (m===9 && d<=22)) return 5;
+  if((m===9 && d>=23) || (m===10 && d<=22)) return 6;
+  if((m===10 && d>=23) || (m===11 && d<=21)) return 7;
+  if((m===11 && d>=22) || (m===12 && d<=21)) return 8;
+  if((m===12 && d>=22) || (m===1 && d<=19)) return 9;
+  if((m===1 && d>=20) || (m===2 && d<=18)) return 10;
+  return 11; // 双鱼
+}
+
+// 儒略日（阳历公元后）
+function toJD(y,m,d,hour){
+  hour = hour||0;
+  let Y=y, M=m;
+  if(M<=2){Y-=1;M+=12;}
+  const A = Math.floor(Y/100), B = 2-A+Math.floor(A/4);
+  return Math.floor(365.25*(Y+4716)) + Math.floor(30.6001*(M+1)) + d + B - 1524.5 + hour/24;
+}
+
+// 月亮黄经（简化 Meeus，主要摄动项）
+function moonLon(jd){
+  const T = (jd-2451545.0)/36525;
+  const rad = Math.PI/180;
+  let L = 218.3164477 + 481267.88123421*T - 0.0015786*T*T;
+  const D  = 297.8501921 + 445267.1114034*T;
+  const M  = 357.5291092 + 35999.0502909*T;
+  const Mp = 134.9633964 + 477198.8675055*T;
+  const F  =  93.2720950 + 483202.0175233*T;
+  L += 6.289*Math.sin(Mp*rad);
+  L -= 1.274*Math.sin((2*D-Mp)*rad);
+  L += 0.658*Math.sin(2*D*rad);
+  L -= 0.214*Math.sin(2*Mp*rad);
+  L -= 0.186*Math.sin(M*rad);
+  L -= 0.114*Math.sin(2*F*rad);
+  return ((L%360)+360)%360;
+}
+
+// 月亮星座（0=白羊，30度分一星座）
+function moonSignIndex(y,m,d,hour){
+  const jd = toJD(y,m,d,hour||12);
+  const lon = moonLon(jd);
+  return Math.floor(lon/30) % 12;
+}
+
+// 上升星座（简化：太阳所在位置 + 出生时间偏移）
+function risingSignIndex(sunIdx, hour){
+  // 假设日出 6:00 时，上升 = 太阳所在星座；每 2 小时向后推 1 星座
+  const shift = Math.floor(((hour||12) - 6 + 24) % 24 / 2);
+  return (sunIdx + shift) % 12;
+}
+
+// 生肖（简化：以立春为界，2/4 之前算上一年）
+function chineseZodiac(y,m,d){
+  let year = y;
+  if(m<2 || (m===2 && d<4)) year -= 1;
+  return {animal: ZODIAC_ANIMALS[((year-4)%12+12)%12], adjustedYear: year};
+}
+
+// 年干支（以立春为界，简化）
+function yearGZ(y,m,d){
+  let year = y;
+  if(m<2 || (m===2 && d<4)) year -= 1;
+  const idx = ((year-4)%60+60)%60;
+  return {gan: GAN[idx%10], zhi: ZHI[idx%12], ganIdx: idx%10};
+}
+
+// 月干支（按节气月，简化用固定节气日期）
+// 节气月边界（近似日期）：立春 2/4, 惊蛰 3/6, 清明 4/5, 立夏 5/6, 芒种 6/6, 小暑 7/7,
+// 立秋 8/8, 白露 9/8, 寒露 10/8, 立冬 11/8, 大雪 12/7, 小寒 1/6
+const MONTH_CUTS = [
+  {m:2,d:4,zhi:'寅'},{m:3,d:6,zhi:'卯'},{m:4,d:5,zhi:'辰'},{m:5,d:6,zhi:'巳'},
+  {m:6,d:6,zhi:'午'},{m:7,d:7,zhi:'未'},{m:8,d:8,zhi:'申'},{m:9,d:8,zhi:'酉'},
+  {m:10,d:8,zhi:'戌'},{m:11,d:8,zhi:'亥'},{m:12,d:7,zhi:'子'},{m:1,d:6,zhi:'丑'},
+];
+function monthGZ(y,m,d,yearGanIdx){
+  // 找当前所在的节气月
+  let monthZhi = '丑';
+  for(let i=0;i<12;i++){
+    const cur = MONTH_CUTS[i];
+    const next = MONTH_CUTS[(i+1)%12];
+    // 判断日期是否在 [cur, next) 之间
+    const inCur = ((m===cur.m && d>=cur.d) || (cur.m===12 && next.m===1 && (m===12 && d>=cur.d || m===1 && d<next.d)) ||
+      (i===11 ? ((m===1 && d>=cur.d) || (m===2 && d<MONTH_CUTS[0].d)) :
+        (cur.m<next.m ? (m>cur.m && m<next.m) || (m===cur.m && d>=cur.d) || (m===next.m && d<next.d) : false)));
+    if(inCur){monthZhi = cur.zhi;break;}
+  }
+  // 简化的 fallback：按公历月粗判
+  if(!monthZhi){
+    const map = {1:'丑',2:'寅',3:'卯',4:'辰',5:'巳',6:'午',7:'未',8:'申',9:'酉',10:'戌',11:'亥',12:'子'};
+    monthZhi = map[m];
+  }
+  const zhiIdx = ZHI.indexOf(monthZhi);
+  // 五虎遁：甲己年丙寅 → 起始月干 index
+  const startGan = ((yearGanIdx%5)*2 + 2) % 10;
+  // 从寅月开始算月序：寅=0, 卯=1...丑=11
+  const monthOrder = (zhiIdx - 2 + 12) % 12;
+  const monthGanIdx = (startGan + monthOrder) % 10;
+  return {gan: GAN[monthGanIdx], zhi: monthZhi, ganIdx: monthGanIdx, zhiIdx};
+}
+
+// 日干支（基于 2000-01-01 = 戊午日, idx = 54；由 1900-01-01 甲戌 idx=10 反推）
+function dayGZ(y,m,d){
+  const jd = Math.floor(toJD(y,m,d,12));
+  const jd2000 = Math.floor(toJD(2000,1,1,12));
+  const daysDiff = jd - jd2000;
+  const idx = ((daysDiff + 54) % 60 + 60) % 60;
+  return {gan: GAN[idx%10], zhi: ZHI[idx%12], ganIdx: idx%10, zhiIdx: idx%12};
+}
+
+// 时干支
+function hourGZ(hour, dayGanIdx){
+  const h = hour==null ? 12 : hour;
+  // 时辰：23-1 子 (idx 0), 1-3 丑, 3-5 寅, 5-7 卯, 7-9 辰, 9-11 巳,
+  // 11-13 午, 13-15 未, 15-17 申, 17-19 酉, 19-21 戌, 21-23 亥
+  const zhiIdx = Math.floor(((h+1)%24)/2);
+  // 五鼠遁：甲己日甲子起 → 起始时干 index
+  const startGan = ((dayGanIdx%5)*2) % 10;
+  const ganIdx = (startGan + zhiIdx) % 10;
+  return {gan: GAN[ganIdx], zhi: ZHI[zhiIdx], ganIdx, zhiIdx};
+}
+
+// 紫微命宫（简化：用节气月 + 生时时辰）
+function ziweiPalace(monthZhiIdx, hourZhiIdx){
+  // 命宫：从寅顺数至月，再从月起子时逆数至时
+  // 寅=2 命宫地支序号 = (monthZhiIdx - hourZhiIdx + 12) % 12
+  const idx = ((monthZhiIdx - hourZhiIdx) + 12) % 12;
+  return ZHI[idx];
+}
+
+// 五行统计
+function countWuxing(bazi){
+  const wx = {'金':0,'木':0,'水':0,'火':0,'土':0};
+  const arr = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  const arrZ = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+  for(const g of arr) wx[WX_GAN[g]]++;
+  for(const z of arrZ) wx[WX_ZHI[z]]++;
+  return wx;
+}
+
+// 综合分析：入口
+function computeFate(profile){
+  const [Y,M,D] = (profile.date||'').split('-').map(Number);
+  if(!Y||!M||!D) return null;
+  let hourLocal = 12; // 用户填的是本地时间（默认北京时间）
+  if(profile.time){
+    const [hh,mm] = profile.time.split(':').map(Number);
+    if(!isNaN(hh)) hourLocal = hh + (mm||0)/60;
+  }
+  // 用于月亮/上升算法的 UT 时间（中国 UT+8）
+  const hourUT = hourLocal - 8;
+  const sunIdx = sunSignIndex(M,D);
+  const moonIdx = moonSignIndex(Y,M,D,hourUT);
+  const risingIdx = risingSignIndex(sunIdx, hourLocal); // 上升用本地时间近似
+  const zodiac = chineseZodiac(Y,M,D);
+  const yGZ = yearGZ(Y,M,D);
+  const mGZ = monthGZ(Y,M,D,yGZ.ganIdx);
+  const dGZ = dayGZ(Y,M,D);
+  const hGZ = hourGZ(hourLocal, dGZ.ganIdx);
+  const bazi = {year:yGZ, month:mGZ, day:dGZ, hour:hGZ};
+  const wx = countWuxing(bazi);
+  const zwPalace = ziweiPalace(mGZ.zhiIdx, hGZ.zhiIdx);
+  const summary = fateSummary(profile, sunIdx, moonIdx, risingIdx, zodiac, bazi, wx, zwPalace);
+  return {
+    sun: SIGN_NAMES[sunIdx]+'座',
+    sunElement: SIGN_ELEMENT[sunIdx],
+    sunMode: SIGN_MODE[sunIdx],
+    moon: SIGN_NAMES[moonIdx]+'座',
+    rising: SIGN_NAMES[risingIdx]+'座',
+    zodiac: zodiac.animal,
+    bazi,
+    wuxing: wx,
+    ziweiPalace: zwPalace + '宫',
+    summary,
+  };
+}
+
+function fateSummary(profile, sunIdx, moonIdx, risingIdx, zodiac, bazi, wx, zwPalace){
+  const dayGan = bazi.day.gan;
+  const dayWx = WX_GAN[dayGan];
+  const wxTotal = 8;
+  const strong = Object.entries(wx).filter(([k,v])=>v>=3).map(([k])=>k);
+  const weak  = Object.entries(wx).filter(([k,v])=>v===0).map(([k])=>k);
+  const sunTraits = {
+    0:'冲劲十足、说做就做，容易在人群里第一个开口',
+    1:'稳、慢、要落地感，喜欢用触感确认价值',
+    2:'脑子转得快、爱交流，一次干十件事不觉得累',
+    3:'情感浓、家意识重，把身边人放心里最深处',
+    4:'自带舞台感、需要被看见，慷慨也任性',
+    5:'细节控、责任感强，用完美来对抗世界的不安',
+    6:'讲平衡、爱美，社交里的润滑剂但也常常内耗',
+    7:'深度模式、执念型，一件事做就要做到底',
+    8:'远方感、爱学习，不喜欢被小事捆住',
+    9:'目标导向、慢热但持久，是最能扛的那种人',
+    10:'思维跳、不合群里的合群者，热衷群体但保持距离',
+    11:'柔软、共情力强，直觉常常比理智更准',
+  };
+  const moonTraits = {
+    0:'情绪来得快去得也快',
+    1:'需要稳定环境安抚',
+    2:'喜怒变化多、爱说话释放情绪',
+    3:'情绪深、依赖亲密关系',
+    4:'需要被认可才有安全感',
+    5:'用整理和条理化对抗不安',
+    6:'需要美与和谐',
+    7:'情绪浓、爱憎分明',
+    8:'情绪需要空间和自由',
+    9:'情绪较克制、认命型',
+    10:'情绪抽离、理性化',
+    11:'情绪易共鸣、共感强',
+  };
+  const dayGanTraits = {
+    '甲':'像参天大树，主意正、有主见但也有点犟',
+    '乙':'像藤蔓花草，柔中带韧，会顺势而为',
+    '丙':'像太阳，热情张扬，天生自带光',
+    '丁':'像烛火，温暖细腻，感染力强但需要保护',
+    '戊':'像高山，稳重厚实，让人有靠山感',
+    '己':'像田园土，包容滋养，是"母性"型能量',
+    '庚':'像刀剑，果断刚毅，做事一刀切',
+    '辛':'像珠玉，精致敏感，讲究细节和品质',
+    '壬':'像江河，开阔灵动，思维流动性强',
+    '癸':'像细雨，温润渗透，看似柔弱实则韧性极强',
+  };
+  const parts = [];
+  parts.push(`太阳${SIGN_NAMES[sunIdx]}（${SIGN_ELEMENT[sunIdx]}象·${SIGN_MODE[sunIdx]}宫）：${sunTraits[sunIdx]}。`);
+  parts.push(`月亮${SIGN_NAMES[moonIdx]}：${moonTraits[moonIdx]}。`);
+  parts.push(`上升${SIGN_NAMES[risingIdx]}：给人的第一印象偏${SIGN_ELEMENT[risingIdx]}向。`);
+  parts.push(`日主${dayGan}（${dayWx}）：${dayGanTraits[dayGan]}。`);
+  const strongDesc = strong.length ? `五行偏${strong.join('/')}${strong.length>1?'并旺':'旺'}` : '五行较均衡';
+  const weakDesc = weak.length ? `，缺${weak.join('/')}` : '';
+  parts.push(`${strongDesc}${weakDesc}。旺者性格显性、缺者留意补养。`);
+  parts.push(`紫微命宫落在${zwPalace}宫，人生剧本主线偏"${zwPalaceHint(zwPalace)}"。`);
+  parts.push(`生肖${zodiac.animal}：底色气质与同类相合的年份易起大势。`);
+  return parts.join('\n');
+}
+
+function zwPalaceHint(zhi){
+  const map = {
+    '子':'内敛聚气型，晚成',
+    '丑':'厚积薄发，忌急',
+    '寅':'开创型，主动出击',
+    '卯':'才艺型，讲缘分',
+    '辰':'库位，聚财藏势',
+    '巳':'行动型，火气足',
+    '午':'展现型，闪光但耗',
+    '未':'滋养型，家运重',
+    '申':'实干型，讲结构',
+    '酉':'精细型，重口碑',
+    '戌':'守成型，保底强',
+    '亥':'流动型，浪漫但飘',
+  };
+  return map[zhi]||'—';
+}
+
+/* 叙事化辅助：给出星座在人格三层里的一句话印象 */
+const SIGN_TONE = {
+  '白羊座':'冲刺型，热得快也冷得快',
+  '金牛座':'稳、慢、认死理',
+  '双子座':'脑子快、话多、爱切换',
+  '巨蟹座':'柔软记情，家和亲近的人是根',
+  '狮子座':'自带舞台感，需要被看见',
+  '处女座':'挑剔的服务型，把事做细做对',
+  '天秤座':'审美优先，怕冲突',
+  '天蝎座':'深度绑定，掌控欲底色',
+  '射手座':'外放开朗，跑得动',
+  '摩羯座':'长期主义，先自苦后成',
+  '水瓶座':'冷距离，讲规则和新颖',
+  '双鱼座':'情绪敏感，柔中带韧',
+};
+function signTone(s){return SIGN_TONE[s]||'—';}
+function wuxingReading(wx){
+  const arr = Object.entries(wx||{});
+  if(!arr.length) return '';
+  const sorted = [...arr].sort((a,b)=>b[1]-a[1]);
+  const strong = sorted.filter(([,v])=>v>=3).map(([k])=>k);
+  const missing = ['金','木','水','火','土'].filter(k=>!wx[k]);
+  const bits=[];
+  if(strong.length) bits.push(`${strong.join('、')}偏旺`);
+  if(missing.length) bits.push(`缺${missing.join('/')}`);
+  if(!bits.length) bits.push('五行相对均衡');
+  return bits.join('，');
+}
+function narrateFate(p, a){
+  const parts=[];
+  const who = `${p.name||'（未命名）'}·${p.gender}，${p.relation||'本人'}`;
+  const born = `生于 ${p.date}${p.time?(' '+p.time):''}${p.place?('，'+p.place):''}`;
+  parts.push(`<p><b>${escape(who)}</b>，${escape(born)}。属${escape(a.zodiac)}。</p>`);
+
+  const trio = `${a.sun}·${a.moon}·${a.rising}`;
+  parts.push(`<p>星盘三要素落在 <b>${escape(trio)}</b>。外显的太阳${escape(a.sun)}是"${escape(signTone(a.sun))}"；月亮${escape(a.moon)}管住私下情绪反应，那是"${escape(signTone(a.moon))}"；上升${escape(a.rising)}是别人第一眼看到的样子，"${escape(signTone(a.rising))}"。三层如果对得上，人显得爽快；若冲突，会常常"心里想的和做出来的不一样"。</p>`);
+
+  const dayGan = a.bazi.day.gan;
+  const dayEl = WX_GAN[dayGan];
+  parts.push(`<p>八字上，日主 <b>${escape(dayGan)}（${escape(dayEl)}）</b>——这是"你自己"这一个字。${escape(wuxingReading(a.wuxing))}。旺的五行是长处也是消耗点，缺的五行往往通过配偶、朋友、职业环境来补。</p>`);
+
+  const zwZhi = (a.ziweiPalace||'').replace('宫','');
+  parts.push(`<p>紫微命宫落在 <b>${escape(a.ziweiPalace)}</b>——${escape(zwPalaceHint(zwZhi))}。可以理解为你人生剧本的"母题"，做事方式的默认档位。</p>`);
+
+  if(a.summary){
+    parts.push(`<p style="color:var(--ink-2);border-left:3px solid var(--accent);padding:6px 12px;background:var(--bg-2);border-radius:0 6px 6px 0;white-space:pre-wrap;">${escape(a.summary)}</p>`);
+  }
+  return parts.join('');
+}
+
+/* ========================================================================
+   命理档案
+   ======================================================================== */
+let editingFateId=null;
+function renderFate(){
+  const list = state.mystic.profiles.slice().sort((a,b)=>b.ts-a.ts);
+  const box = document.getElementById('fateList');
+  if(!list.length){box.innerHTML='<div class="empty">还没有命理档案。点右上角「立一个档」——填生日和出生时间就自动帮你算。</div>';return;}
+  box.innerHTML = list.map(p=>{
+    const a = p.auto || {};
+    return `
+    <div class="fate-card" onclick="openFateDetail('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="fname">${escape(p.name||'（未命名）')} · ${escape(p.gender||'')} · <span style="color:var(--ink-3);font-size:12px;">${escape(p.relation||'本人')}</span></div>
+          <div class="fmeta">${escape(p.date||'—')} ${escape(p.time||'')} · ${escape(p.place||'—')}</div>
+        </div>
+        <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+          <button class="btn small ghost" onclick="editFate('${p.id}')">编辑</button>
+          <button class="btn small danger" onclick="delFate('${p.id}')">删</button>
+        </div>
+      </div>
+      ${a.sun?`<div class="fauto">
+        <span class="kv">☀ 太阳 <b>${escape(a.sun)}</b></span>
+        <span class="kv">☾ 月亮 <b>${escape(a.moon)}</b></span>
+        <span class="kv">△ 上升 <b>${escape(a.rising)}</b></span>
+        <span class="kv">生肖 <b>${escape(a.zodiac)}</b></span>
+        <span class="kv">日主 <b>${escape(a.bazi?.day?.gan||'')}${escape(a.bazi?.day?.zhi||'')}</b></span>
+        <span class="kv">紫微命宫 <b>${escape(a.ziweiPalace)}</b></span>
+      </div>`:''}
+      ${p.note?`<div class="fnote" style="border-top:1px dashed var(--line);padding-top:8px;margin-top:8px;">${escape(p.note)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openFateModal(){
+  editingFateId=null;
+  document.getElementById('fateModalTitle').innerText='立一个命理档案';
+  ['pName','pDate','pTime','pPlace','pNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pGender').value='女';
+  document.getElementById('pRelation').value='本人';
+  openModal('fateModal');
+}
+function editFate(id){
+  event && event.stopPropagation && event.stopPropagation();
+  const p = state.mystic.profiles.find(x=>x.id===id);if(!p) return;
+  editingFateId=id;
+  document.getElementById('fateModalTitle').innerText='编辑命理档案';
+  document.getElementById('pName').value=p.name||'';
+  document.getElementById('pRelation').value=p.relation||'本人';
+  document.getElementById('pGender').value=p.gender||'女';
+  document.getElementById('pDate').value=p.date||'';
+  document.getElementById('pTime').value=p.time||'';
+  document.getElementById('pPlace').value=p.place||'';
+  document.getElementById('pNote').value=p.note||'';
+  openModal('fateModal');
+}
+function saveFate(){
+  const date = document.getElementById('pDate').value.trim();
+  if(!date){alert('阳历生日必填哦，其他都可以留空。');return;}
+  const obj={
+    name:document.getElementById('pName').value.trim(),
+    relation:document.getElementById('pRelation').value,
+    gender:document.getElementById('pGender').value,
+    date, // YYYY-MM-DD
+    time:document.getElementById('pTime').value.trim(),
+    place:document.getElementById('pPlace').value.trim(),
+    note:document.getElementById('pNote').value.trim(),
+    ts:Date.now(),
+  };
+  obj.auto = computeFate(obj);
+  if(editingFateId){
+    const i=state.mystic.profiles.findIndex(x=>x.id===editingFateId);
+    state.mystic.profiles[i]={...state.mystic.profiles[i],...obj};
+  }else{
+    obj.id='p_'+Date.now();
+    state.mystic.profiles.unshift(obj);
+  }
+  save();closeModal('fateModal');renderFate();
+  if(!editingFateId) openFateDetail(obj.id||state.mystic.profiles[0].id);
+}
+function delFate(id){
+  event && event.stopPropagation && event.stopPropagation();
+  if(!confirm('删除这份档案？')) return;
+  state.mystic.profiles = state.mystic.profiles.filter(x=>x.id!==id);
+  save();renderFate();
+}
+
+function openFateDetail(id){
+  const p = state.mystic.profiles.find(x=>x.id===id);if(!p) return;
+  let a = p.auto;
+  if(!a){a = computeFate(p);p.auto=a;save();}
+  if(!a){alert('生日格式不对，无法生成命理。');return;}
+  const wxTotal = Object.values(a.wuxing).reduce((s,x)=>s+x,0)||1;
+  const wxOrder = ['金','木','水','火','土'];
+  const wxHTML = wxOrder.map(k=>{
+    const v = a.wuxing[k]||0;
+    const pct = Math.round(v/wxTotal*100);
+    return v>0?`<div class="seg wx-${k}" style="flex:${v};">${k}${v}</div>`:'';
+  }).filter(Boolean).join('');
+  const html = `
+    <div class="fate-detail">
+      <h2>${escape(p.name||'（未命名）')} · ${escape(p.gender)}</h2>
+      <div class="subline">${escape(p.date)} ${escape(p.time||'时间未填')} · ${escape(p.place||'—')} · ${escape(p.relation||'本人')}</div>
+
+      <div class="fate-block fate-narrative">
+        <h4>📖 命理速读</h4>
+        ${narrateFate(p,a)}
+        ${p.note?`<p style="margin-top:8px;font-size:13px;color:var(--ink-2);"><b>我的笔记：</b>${escape(p.note)}</p>`:''}
+      </div>
+
+      <details class="fate-block" style="padding:0;">
+        <summary style="cursor:pointer;padding:14px 16px;font-family:var(--serif);font-size:15px;color:var(--ink);">🔍 展开原始数据（星盘 · 八字 · 五行 · 紫微）</summary>
+        <div style="padding:0 16px 12px 16px;">
+          <div class="fate-block">
+            <h4>☀ 星盘三要素</h4>
+            <div class="row-kv">
+              <div><span>太阳星座</span> <b>${escape(a.sun)}</b>（${escape(a.sunElement)}象·${escape(a.sunMode)}宫）</div>
+              <div><span>月亮星座</span> <b>${escape(a.moon)}</b></div>
+              <div><span>上升星座</span> <b>${escape(a.rising)}</b> <span style="color:var(--ink-3);font-size:11px;">（简化算法·参考用）</span></div>
+              <div><span>生肖</span> <b>${escape(a.zodiac)}</b></div>
+            </div>
+          </div>
+
+          <div class="fate-block">
+            <h4>四柱八字</h4>
+            <div class="bazi-grid">
+              <div class="bazi-cell"><div class="label">时柱</div><div class="gz">${escape(a.bazi.hour.gan)}${escape(a.bazi.hour.zhi)}</div><div class="wx">${escape(WX_GAN[a.bazi.hour.gan])}·${escape(WX_ZHI[a.bazi.hour.zhi])}</div></div>
+              <div class="bazi-cell"><div class="label">日柱（自己）</div><div class="gz" style="color:var(--accent);">${escape(a.bazi.day.gan)}${escape(a.bazi.day.zhi)}</div><div class="wx">${escape(WX_GAN[a.bazi.day.gan])}·${escape(WX_ZHI[a.bazi.day.zhi])}</div></div>
+              <div class="bazi-cell"><div class="label">月柱</div><div class="gz">${escape(a.bazi.month.gan)}${escape(a.bazi.month.zhi)}</div><div class="wx">${escape(WX_GAN[a.bazi.month.gan])}·${escape(WX_ZHI[a.bazi.month.zhi])}</div></div>
+              <div class="bazi-cell"><div class="label">年柱</div><div class="gz">${escape(a.bazi.year.gan)}${escape(a.bazi.year.zhi)}</div><div class="wx">${escape(WX_GAN[a.bazi.year.gan])}·${escape(WX_ZHI[a.bazi.year.zhi])}</div></div>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);">日主：<b style="color:var(--accent-2);">${escape(a.bazi.day.gan)}（${escape(WX_GAN[a.bazi.day.gan])}）</b> · 五行分布：</p>
+            <div class="wuxing-bar">${wxHTML||'<div class="seg" style="flex:1;color:var(--ink-3);">—</div>'}</div>
+          </div>
+
+          <div class="fate-block">
+            <h4>紫微命宫</h4>
+            <p><b>${escape(a.ziweiPalace)}</b> · ${escape(zwPalaceHint(a.ziweiPalace.replace('宫','')))}</p>
+            <p style="font-size:12px;color:var(--ink-3);">具体主星（紫微·天机·太阳…等 14 主星落宫）请用专业排盘工具查询，本工作台仅提供命宫方向。</p>
+          </div>
+        </div>
+      </details>
+
+      <div class="disclaimer">⚠ 说明：本地算法为简化版本。星座/生肖/干支/五行相对准确；月亮星座、上升星座、紫微命宫使用简化模型，可能存在 ±1 星座/±1 宫的误差。若要精确排盘，请使用「测测」「新月占星」「紫微在线」等专业工具复核。</div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn ghost" onclick="closeModal('fateDetailModal')">关闭</button>
+        <button class="btn ghost" onclick="editFate('${p.id}')">编辑基础信息</button>
+        <button class="btn" onclick="askFateAI('${p.id}')">让 Q 深度分析</button>
+      </div>
+    </div>`;
+  document.getElementById('fateDetailBody').innerHTML = html;
+  openModal('fateDetailModal');
+}
+
+function askFateAI(id){
+  const p = state.mystic.profiles.find(x=>x.id===id);if(!p||!p.auto) return;
+  const a = p.auto;
+  const prompt = `请帮我做一次命理综合解读，档案信息：
+姓名：${p.name||'匿名'}
+性别：${p.gender}
+阳历生日：${p.date} ${p.time||''}
+出生地：${p.place||'—'}
+
+工作台已算出：
+- 太阳 ${a.sun}·月亮 ${a.moon}·上升 ${a.rising}
+- 生肖 ${a.zodiac}
+- 八字：${a.bazi.year.gan}${a.bazi.year.zhi} ${a.bazi.month.gan}${a.bazi.month.zhi} ${a.bazi.day.gan}${a.bazi.day.zhi} ${a.bazi.hour.gan}${a.bazi.hour.zhi}
+- 五行分布：${JSON.stringify(a.wuxing)}
+- 紫微命宫：${a.ziweiPalace}
+
+请从以下几个维度综合分析（500-800字）：
+1. 性格底色与人格三要素协同
+2. 事业方向与优势天赋
+3. 感情/关系模式
+4. 需要留意的坑与建议
+5. 最近三年运势主线
+
+要求：语气温和、不要太玄乎、给具体行动建议。`;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    alert('分析提示词已复制 ✓\n粘贴给 Q 即可拿到深度解读，你可以贴回下面的「关键笔记」保存。');
+  }).catch(()=>alert('复制失败，控制台已打印'));
+  console.log(prompt);
+}
+
+/* ========================================================================
+   Modal helpers & utils
+   ======================================================================== */
+function openModal(id){document.getElementById(id).classList.add('on');}
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+document.querySelectorAll('.modal-mask').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m) m.classList.remove('on');});
+});
+function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+
+/* Import / Export */
+function exportAll(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;a.download='miao_workbench_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(url);
+  state.meta = state.meta || {};
+  state.meta.lastBackupAt = Date.now();
+  save();
+  renderBackupNote();
+}
+function importAll(){document.getElementById('importFile').click();}
+document.getElementById('importFile').addEventListener('change',e=>{
+  const file = e.target.files[0];if(!file) return;
+  const fr = new FileReader();
+  fr.onload=()=>{
+    try{
+      const data = JSON.parse(fr.result);
+      if(!confirm('导入后会覆盖当前数据，确认？')) return;
+      state = data;save();initAll();
+      alert('导入完成');
+    }catch(err){alert('文件格式不对：'+err.message);}
+  };
+  fr.readAsText(file);
+});
+
+/* ========================================================================
+   云端同步 · GitHub Gist（secret gist，仅 gist 权限）
+   ======================================================================== */
+const CLOUD_KEY = 'miao_workbench_cloud';
+const CLOUD_FILE = 'miao_workbench.json';
+function cloudGetCfg(){
+  try{return JSON.parse(localStorage.getItem(CLOUD_KEY)||'{}');}catch(e){return {};}
+}
+function cloudSaveCfg(cfg){localStorage.setItem(CLOUD_KEY,JSON.stringify(cfg));}
+function cloudRenderStatus(){
+  const cfg = cloudGetCfg();
+  const el = document.getElementById('cldStatus'); if(!el) return;
+  const fmt = ts => ts ? new Date(ts).toLocaleString() : '—';
+  const bits = [
+    `本地更新：${fmt(state.meta&&state.meta.updatedAt)}`,
+    `上次上传：${fmt(cfg.lastPushedAt)}`,
+    `上次下载：${fmt(cfg.lastPulledAt)}`,
+  ];
+  if(cfg.gistId) bits.push(`Gist：<a href="https://gist.github.com/${cfg.gistId}" target="_blank">${cfg.gistId.slice(0,10)}…</a>`);
+  el.innerHTML = bits.join(' · ');
+}
+function openCloudSync(){
+  const cfg = cloudGetCfg();
+  document.getElementById('cldToken').value = cfg.token || '';
+  document.getElementById('cldGistId').value = cfg.gistId || '';
+  cloudRenderStatus();
+  openModal('cloudSyncModal');
+}
+function cloudReadInputs(){
+  const token = document.getElementById('cldToken').value.trim();
+  const gistId = document.getElementById('cldGistId').value.trim();
+  return {token, gistId};
+}
+async function gistFetch(url, opts, token){
+  const r = await fetch(url, {
+    ...opts,
+    headers:{
+      'Accept':'application/vnd.github+json',
+      'Authorization':'Bearer '+token,
+      'X-GitHub-Api-Version':'2022-11-28',
+      ...(opts&&opts.headers||{}),
+    },
+  });
+  if(!r.ok){
+    const txt = await r.text();
+    throw new Error(`GitHub API ${r.status}: ${txt.slice(0,200)}`);
+  }
+  return r.json();
+}
+async function cloudCreateGist(){
+  const {token} = cloudReadInputs();
+  if(!token){alert('先填 Token。');return;}
+  if(!confirm('将当前数据上传，创建一个新的 secret Gist？')) return;
+  try{
+    const body = {
+      description:'妙妙的学习工作台 · 数据备份（勿删）',
+      public:false,
+      files:{[CLOUD_FILE]:{content:JSON.stringify(state,null,2)}},
+    };
+    const res = await gistFetch('https://api.github.com/gists',{
+      method:'POST', body:JSON.stringify(body),
+    }, token);
+    const cfg = cloudGetCfg();
+    cfg.token = token;
+    cfg.gistId = res.id;
+    cfg.lastPushedAt = Date.now();
+    cloudSaveCfg(cfg);
+    document.getElementById('cldGistId').value = res.id;
+    cloudRenderStatus();
+    alert('已创建 Gist ✓ ID 已保存在本地。');
+  }catch(e){alert('创建失败：'+e.message);}
+}
+async function cloudUpload(){
+  const {token, gistId} = cloudReadInputs();
+  if(!token || !gistId){alert('Token 和 Gist ID 都要填。首次使用点"创建新 Gist"。');return;}
+  try{
+    // 先看远端是否更新过，若比本地新则确认
+    let remote = null;
+    try{ remote = await gistFetch(`https://api.github.com/gists/${gistId}`, {}, token); }catch(e){}
+    if(remote && remote.updated_at){
+      const remoteMs = new Date(remote.updated_at).getTime();
+      const localMs = (state.meta&&state.meta.updatedAt)||0;
+      if(remoteMs > localMs + 5000){
+        if(!confirm(`⚠ 云端比本地新（${new Date(remoteMs).toLocaleString()} > ${new Date(localMs).toLocaleString()}）。\n继续上传会覆盖云端。确定？`)) return;
+      }
+    }
+    await gistFetch(`https://api.github.com/gists/${gistId}`, {
+      method:'PATCH',
+      body:JSON.stringify({files:{[CLOUD_FILE]:{content:JSON.stringify(state,null,2)}}}),
+    }, token);
+    const cfg = cloudGetCfg();
+    cfg.token = token; cfg.gistId = gistId;
+    cfg.lastPushedAt = Date.now();
+    cloudSaveCfg(cfg);
+    cloudRenderStatus();
+    alert('上传完成 ✓');
+  }catch(e){alert('上传失败：'+e.message);}
+}
+async function cloudDownload(){
+  const {token, gistId} = cloudReadInputs();
+  if(!token || !gistId){alert('Token 和 Gist ID 都要填。');return;}
+  if(!confirm('下载会覆盖当前本地数据（先自动做一次本地备份到文件）。继续？')) return;
+  try{
+    // 本地保护：先导出一次
+    const bkBlob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const bkUrl = URL.createObjectURL(bkBlob);
+    const bkA = document.createElement('a');
+    bkA.href = bkUrl;
+    bkA.download = 'miao_workbench_before_pull_'+new Date().toISOString().slice(0,10)+'.json';
+    bkA.click(); URL.revokeObjectURL(bkUrl);
+    // 拉取
+    const res = await gistFetch(`https://api.github.com/gists/${gistId}`, {}, token);
+    const file = res.files && res.files[CLOUD_FILE];
+    if(!file || !file.content) throw new Error('Gist 中没有 '+CLOUD_FILE);
+    let content = file.content;
+    if(file.truncated && file.raw_url){
+      const rr = await fetch(file.raw_url);
+      content = await rr.text();
+    }
+    const data = JSON.parse(content);
+    state = data;
+    save(); // 会写入 updatedAt 并触发状态条更新
+    initAll();
+    const cfg = cloudGetCfg();
+    cfg.token = token; cfg.gistId = gistId;
+    cfg.lastPulledAt = Date.now();
+    cloudSaveCfg(cfg);
+    cloudRenderStatus();
+    alert('下载完成 ✓ 本地数据已替换。（上传前的旧数据已作为 JSON 下载到你的下载夹作为保险。）');
+  }catch(e){alert('下载失败：'+e.message);}
+}
+function renderBackupNote(){
+  const el = document.getElementById('backupNote'); if(!el) return;
+  const last = state.meta && state.meta.lastBackupAt;
+  if(!last){
+    el.className = 'backup-note warn on';
+    el.textContent = '还没备份过。每 1-2 周记得导出一次 JSON。';
+    return;
+  }
+  const days = Math.floor((Date.now()-last)/86400000);
+  if(days<=0){
+    el.className = 'backup-note on';
+    el.textContent = '今天已备份 ✓';
+  }else if(days<=14){
+    el.className = 'backup-note on';
+    el.textContent = `上次备份：${days} 天前`;
+  }else{
+    el.className = 'backup-note warn on';
+    el.textContent = `已 ${days} 天没备份了，建议现在导出一次。`;
+  }
+}
+
+/* ========================================================================
+   Footer status bar - 数据量 / 存储 / 备份状态
+   ======================================================================== */
+function renderStatusBar(){
+  const $ = id => document.getElementById(id);
+  if(!$('statusBar')) return;
+  const cnt = {
+    books: (state.books||[]).length,
+    quotes: (state.quotes||[]).length,
+    ideas: ((state.media&&state.media.ideas)||[]).length,
+    mystic: Object.values((state.mystic&&state.mystic.knowledge)||{}).reduce((s,a)=>s+a.length,0),
+    fate: ((state.mystic&&state.mystic.profiles)||[]).length,
+    wenwan: Object.values((state.wenwan&&state.wenwan.knowledge)||{}).reduce((s,a)=>s+a.length,0),
+  };
+  $('sbBooks').textContent = cnt.books;
+  $('sbQuotes').textContent = cnt.quotes;
+  $('sbIdeas').textContent = cnt.ideas;
+  $('sbMystic').textContent = cnt.mystic;
+  $('sbFate').textContent = cnt.fate;
+  $('sbWenwan').textContent = cnt.wenwan;
+
+  // storage size
+  let bytes = 0;
+  try{ bytes = (localStorage.getItem(KEY)||'').length; }catch(e){}
+  const kb = bytes/1024;
+  const storEl = $('sbStorage'), storDot = $('sbStorageDot');
+  storEl.textContent = kb<1024 ? kb.toFixed(1)+' KB' : (kb/1024).toFixed(2)+' MB';
+  storDot.className = 'sb-dot ' + (kb<2048?'ok':kb<4096?'warn':'bad');
+  storEl.title = `本地存储用量：${bytes.toLocaleString()} 字节`;
+
+  // backup status
+  const last = state.meta && state.meta.lastBackupAt;
+  const bEl = $('sbBackup'), bDot = $('sbBackupDot');
+  if(!last){
+    bDot.className='sb-dot warn';
+    bEl.textContent='尚未备份';
+    bEl.title='点右侧「导出」保存一份 JSON';
+  }else{
+    const days = Math.floor((Date.now()-last)/86400000);
+    if(days<=0){bDot.className='sb-dot ok';bEl.textContent='今日已备份';}
+    else if(days<=14){bDot.className='sb-dot ok';bEl.textContent=`备份于 ${days} 天前`;}
+    else{bDot.className='sb-dot warn';bEl.textContent=`已 ${days} 天未备份`;}
+    bEl.title=new Date(last).toLocaleString();
+  }
+}
+
+/* Today */
+function setToday(){
+  const d = new Date();
+  const w = ['日','一','二','三','四','五','六'][d.getDay()];
+  document.getElementById('today-sub').innerText =
+    `${d.getFullYear()}·${String(d.getMonth()+1).padStart(2,'0')}·${String(d.getDate()).padStart(2,'0')} 周${w}`;
+}
+
+/* Init */
+function initAll(){
+  setToday();
+  migrateFateAuto();
+  renderShelf();
+  renderQuotes();
+  renderIndustry();
+  renderProject();
+  renderMediaSources();renderIdeas();
+  renderMysticKnowledge();renderFate();
+  renderWenwan();
+  renderBackupNote();
+  renderStatusBar();
+  initCmdK();
+  initGlobalShortcuts();
+}
+initAll();
+
+/* ========================================================================
+   全局搜索（Cmd/Ctrl+K）+ 快捷键
+   ======================================================================== */
+const CMDK = { open:false, q:'', results:[], sel:0 };
+
+function cmdkBuildIndex(){
+  const idx = [];
+  (state.books||[]).forEach(b=>idx.push({
+    kind:'读书·书', label:b.title, sub:[b.author,b.publisher].filter(Boolean).join(' · '),
+    hay:[b.title,b.author,b.publisher,b.notes].filter(Boolean).join(' '),
+    go:()=>{switchPane('reading');document.querySelector('#readingSubtabs button[data-rd-tab="shelf"]').click();openBookDetail(b.id);}
+  }));
+  (state.quotes||[]).forEach(q=>{
+    const book = q.bookId ? (state.books||[]).find(b=>b.id===q.bookId) : null;
+    idx.push({
+      kind:'读书·金句', label:(q.text||'').slice(0,80), sub:[q.topic,book&&book.title,q.source].filter(Boolean).join(' · '),
+      hay:[q.text,q.topic,q.source,book&&book.title].filter(Boolean).join(' '),
+      go:()=>{switchPane('reading');document.querySelector('#readingSubtabs button[data-rd-tab="quotes"]').click();}
+    });
+  });
+  ((state.media&&state.media.ideas)||[]).forEach(i=>idx.push({
+    kind:'自媒体·选题', label:i.title||i.hook||'(无题)', sub:[i.plat,i.prio,i.tag].filter(Boolean).join(' · '),
+    hay:[i.title,i.hook,i.plat,i.tag,i.note].filter(Boolean).join(' '),
+    go:()=>{switchPane('media');}
+  }));
+  const mk = (state.mystic&&state.mystic.knowledge)||{};
+  Object.entries(mk).forEach(([cat,arr])=>arr.forEach(k=>idx.push({
+    kind:'玄学·'+cat, label:k.title, sub:(k.body||'').slice(0,60),
+    hay:[k.title,k.body,cat].filter(Boolean).join(' '),
+    go:()=>{switchPane('mystic');document.querySelector('#mysticSubtabs button[data-my-tab="knowledge"]').click();
+            const btn=document.querySelector(`#mysticKnowSubtabs button[data-cat="${cat}"]`);btn&&btn.click();}
+  })));
+  ((state.mystic&&state.mystic.profiles)||[]).forEach(p=>idx.push({
+    kind:'玄学·档案', label:p.name||'(未命名)', sub:[p.gender,p.birth].filter(Boolean).join(' · '),
+    hay:[p.name,p.birth,p.notes,p.relation].filter(Boolean).join(' '),
+    go:()=>{switchPane('mystic');document.querySelector('#mysticSubtabs button[data-my-tab="profiles"]').click();openFateDetail(p.id);}
+  }));
+  const ww = (state.wenwan&&state.wenwan.knowledge)||{};
+  Object.entries(ww).forEach(([cat,arr])=>arr.forEach(k=>idx.push({
+    kind:'文玩·'+cat, label:k.title, sub:(k.body||'').slice(0,60),
+    hay:[k.title,k.body,cat].filter(Boolean).join(' '),
+    go:()=>{switchPane('wenwan');const btn=document.querySelector(`#wenwanSubtabs button[data-cat="${cat}"]`);btn&&btn.click();}
+  })));
+  return idx;
+}
+
+function cmdkOpen(){
+  const mask=document.getElementById('cmdkMask');mask.classList.add('on');
+  const inp=document.getElementById('cmdkInput');inp.value='';CMDK.q='';CMDK.sel=0;
+  cmdkRender();setTimeout(()=>inp.focus(),20);CMDK.open=true;
+}
+function cmdkClose(){document.getElementById('cmdkMask').classList.remove('on');CMDK.open=false;}
+function cmdkRender(){
+  const list=document.getElementById('cmdkList');
+  const q=(CMDK.q||'').trim().toLowerCase();
+  const all=cmdkBuildIndex();
+  const results = q ? all.filter(x=>x.hay.toLowerCase().includes(q)).slice(0,50)
+                    : all.slice(0,20);
+  CMDK.results=results;
+  if(CMDK.sel>=results.length) CMDK.sel = Math.max(0,results.length-1);
+  if(!results.length){list.innerHTML=`<div class="cmdk-empty">没有匹配。试试其他关键词。</div>`;return;}
+  const highlight = s => q ? String(s||'').replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>') : String(s||'');
+  list.innerHTML = results.map((r,i)=>`
+    <div class="cmdk-item ${i===CMDK.sel?'on':''}" data-i="${i}">
+      <span class="cmdk-badge">${r.kind}</span>
+      <span class="cmdk-title">${highlight(r.label)||'<span style="color:#999">(空)</span>'}</span>
+      <span class="cmdk-sub">${highlight(r.sub)}</span>
+    </div>`).join('');
+  list.querySelectorAll('.cmdk-item').forEach(el=>{
+    el.addEventListener('click',()=>{CMDK.sel=+el.dataset.i;cmdkActivate();});
+    el.addEventListener('mouseenter',()=>{CMDK.sel=+el.dataset.i;cmdkUpdateSelection();});
+  });
+}
+function cmdkUpdateSelection(){
+  const items=document.querySelectorAll('#cmdkList .cmdk-item');
+  items.forEach((el,i)=>el.classList.toggle('on',i===CMDK.sel));
+  const cur=items[CMDK.sel];if(cur) cur.scrollIntoView({block:'nearest'});
+}
+function cmdkActivate(){
+  const r=CMDK.results[CMDK.sel];if(!r) return;
+  cmdkClose();try{r.go();}catch(e){console.warn('cmdk go error',e);}
+}
+function initCmdK(){
+  const inp=document.getElementById('cmdkInput');
+  inp.addEventListener('input',e=>{CMDK.q=e.target.value;CMDK.sel=0;cmdkRender();});
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();CMDK.sel=Math.min(CMDK.results.length-1,CMDK.sel+1);cmdkUpdateSelection();}
+    else if(e.key==='ArrowUp'){e.preventDefault();CMDK.sel=Math.max(0,CMDK.sel-1);cmdkUpdateSelection();}
+    else if(e.key==='Enter'){e.preventDefault();cmdkActivate();}
+    else if(e.key==='Escape'){e.preventDefault();cmdkClose();}
+  });
+  document.getElementById('cmdkMask').addEventListener('click',e=>{
+    if(e.target.id==='cmdkMask') cmdkClose();
+  });
+}
+
+function initGlobalShortcuts(){
+  document.addEventListener('keydown',e=>{
+    const inField = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||'') || e.target.isContentEditable;
+    const mod = e.metaKey || e.ctrlKey;
+    // Cmd/Ctrl+K → 搜索
+    if(mod && e.key.toLowerCase()==='k'){e.preventDefault();CMDK.open?cmdkClose():cmdkOpen();return;}
+    // Cmd/Ctrl+B → 一键备份
+    if(mod && e.key.toLowerCase()==='b' && !inField){e.preventDefault();exportAll();return;}
+    // Esc 关闭 palette（若已在输入框内则 palette 的 keydown 会处理）
+    if(e.key==='Escape' && CMDK.open){cmdkClose();return;}
+    if(inField) return;
+    // 1..5 切换主标签
+    const map = {'1':'reading','2':'work','3':'media','4':'mystic','5':'wenwan'};
+    if(map[e.key]){e.preventDefault();switchPane(map[e.key]);
+      document.querySelectorAll('#mainTabs button').forEach(x=>x.classList.toggle('active',x.dataset.tab===map[e.key]));
+    }
+  });
+}
+</script>
+</body>
+</html>
