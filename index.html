@@ -130,6 +130,7 @@
   .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line);}
   .btn.ghost:hover{background:var(--bg-2);}
   .btn.small{padding:5px 10px;font-size:12px;border-radius:6px;}
+  .btn.tiny{padding:3px 8px;font-size:11px;border-radius:5px;line-height:1.5;}
   .btn.link{background:transparent;color:var(--accent-2);padding:4px 6px;text-decoration:underline;}
   .btn.danger{background:transparent;color:var(--danger);border:1px solid #E9C4B8;}
   .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
@@ -209,6 +210,12 @@
   .pb-block ol,.pb-block ul{margin:4px 0 4px 20px;padding:0;}
   .pb-block li{margin-bottom:4px;}
   .pb-tpl{background:#F7F5EE;border:1px dashed var(--line);border-radius:6px;padding:8px 10px;font-family:var(--serif);white-space:pre-wrap;margin-top:4px;}
+  /* v1.9 · 项目 tab mini header */
+  .project-header{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 12px;gap:12px;flex-wrap:wrap;}
+  .ph-info{flex:1;min-width:0;}
+  .ph-desc{font-size:13px;color:var(--ink-2);}
+  .ph-desc.ph-empty{color:var(--ink-3);font-style:italic;}
+  .ph-actions{display:flex;gap:6px;flex-shrink:0;}
 
   /* Knowledge block */
   .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
@@ -942,28 +949,37 @@ const seed = {
   work:{
     industry:{
       '玩具':{sources:[
-          {name:'玩具产业新观察',url:'https://www.baidu.com/s?wd=%E7%8E%A9%E5%85%B7%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:'百度搜"玩具行业报告 2026"'},
-          {name:'中国玩具和婴童用品协会',url:'https://www.tjpaa.org/',note:'官方协会站'},
-          {name:'亿邦动力·玩具',url:'https://www.ebrun.com/toy/',note:'电商视角行业新闻'},
+          {name:'中国玩具和婴童用品协会',url:'https://www.tjpaa.org/',note:'官方协会 · 每年发《中国玩具和婴童用品行业白皮书》'},
+          {name:'中外玩具网',url:'https://www.ctoy.com.cn/',note:'老牌玩具行业媒体 · 展会/新品/供应链动态'},
+          {name:'玩具前沿',url:'https://www.wjcz.com.cn/',note:'玩具行业垂直媒体'},
+          {name:'微信搜狗 · 玩具行业干货',url:'https://weixin.sogou.com/weixin?type=2&query=%E7%8E%A9%E5%85%B7%E8%A1%8C%E4%B8%9A%E5%91%A8%E6%8A%A5',note:'定向搜"玩具行业周报/月报"公众号文章'},
+          {name:'36氪 · 潮玩',url:'https://36kr.com/search/articles/%E6%BD%AE%E7%8E%A9',note:'潮玩品牌观察'},
         ],insights:[]},
       '宠物':{sources:[
-          {name:'宠物行业白皮书检索',url:'https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E5%AE%A0%E7%89%A9%E8%A1%8C%E4%B8%9A%E7%99%BD%E7%9A%AE%E4%B9%A6',note:'年度白皮书'},
-          {name:'派读宠物行业大数据',url:'https://www.petdata.cn/',note:'国内领先宠物行业数据平台'},
-          {name:'亿邦动力·宠物',url:'https://www.ebrun.com/pet/',note:''},
+          {name:'派读宠物行业大数据',url:'https://www.petdata.cn/',note:'年度《中国宠物行业白皮书》权威源'},
+          {name:'宠业家',url:'https://www.chongyejia.com/',note:'宠物行业头部媒体'},
+          {name:'微信搜狗 · 宠物白皮书',url:'https://weixin.sogou.com/weixin?type=2&query=%E5%AE%A0%E7%89%A9%E8%A1%8C%E4%B8%9A%E7%99%BD%E7%9A%AE%E4%B9%A6',note:'定向搜白皮书解读文章'},
+          {name:'京东宠物榜单',url:'https://top.jd.com/list?category=1620-0-0',note:'京东类目实时热销榜'},
+          {name:'天猫宠物 top',url:'https://top.tmall.com/',note:'天猫类目榜（自选宠物类目）'},
         ],insights:[]},
       '个护家清':{sources:[
-          {name:'CBNData 家清个护',url:'https://www.cbndata.com/',note:'第一财经商业数据中心'},
-          {name:'个护家清行业检索',url:'https://www.baidu.com/s?wd=%E4%B8%AA%E6%8A%A4%E5%AE%B6%E6%B8%85%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:''},
+          {name:'化妆品报',url:'https://www.cbo.cn/',note:'老牌媒体 · 覆盖个护/家清/美妆'},
+          {name:'化妆品观察',url:'https://www.pinguan.com/',note:'名字带"化妆品"但覆盖个护家清'},
+          {name:'CBNData 消费大数据',url:'https://www.cbndata.com/',note:'第一财经消费数据 · 家清/个护榜单和报告'},
+          {name:'微信搜狗 · 家清行业',url:'https://weixin.sogou.com/weixin?type=2&query=%E5%AE%B6%E6%B8%85%E4%B8%AA%E6%8A%A4%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A',note:'定向搜行业报告解读'},
+          {name:'天猫家清 top',url:'https://top.tmall.com/',note:'天猫家清热销榜'},
         ],insights:[]},
       '美妆':{sources:[
           {name:'聚美丽',url:'https://www.jumeili.cn/',note:'化妆品行业头部媒体'},
-          {name:'青眼',url:'https://www.qingyanwang.com.cn/',note:'美妆产业媒体'},
-          {name:'亿邦动力·美妆',url:'https://www.ebrun.com/beauty/',note:''},
+          {name:'青眼',url:'https://www.qingyanwang.com.cn/',note:'美妆产业媒体 · 数据+深度报道'},
+          {name:'化妆品报',url:'https://www.cbo.cn/',note:'老牌媒体'},
+          {name:'化妆品观察',url:'https://www.pinguan.com/',note:'新兴品牌 & 供应链视角'},
+          {name:'微信搜狗 · 美妆行业研究',url:'https://weixin.sogou.com/weixin?type=2&query=%E7%BE%8E%E5%A6%86%E8%A1%8C%E4%B8%9A%E7%A0%94%E7%A9%B6',note:'定向搜行业研究/新锐品牌拆解'},
         ],insights:[]},
     },
     project:{
-      '正版IP':{desc:'IP 授权 · 联名 · 版权合作。',playbooks:[],retros:[]},
-      '联营计划':{desc:'联营招商 · 服务商 · 品牌孵化项目。',playbooks:[],retros:[]},
+      '正版IP':{desc:'IP 授权 · 联名 · 版权合作',playbooks:[],retros:[]},
+      '联营计划':{desc:'联营招商 · 服务商 · 品牌孵化',playbooks:[],retros:[]},
     }
   },
   media:{
@@ -1357,6 +1373,60 @@ const BOOK_CORE_VIEWS = {
 };
 const BOOK_CV_VER = 'v1.7-batch';
 const WORK_MODEL_VER = 'v1.8-methodology';
+const WORK_SOURCES_VER = 'v1.9-sources'; // 每次刷新信源清单就 bump
+// v1.9：把老用户的默认信源清单同步到最新（保留用户自己加过的）
+function syncIndustrySources(){
+  try{
+    if(state.__work_sources_ver === WORK_SOURCES_VER) return;
+    if(!state.work||!state.work.industry) return;
+    // 内置基线信源快照——迁移时用
+    const BASELINE = {
+      '玩具':[
+        {name:'中国玩具和婴童用品协会',url:'https://www.tjpaa.org/',note:'官方协会 · 每年发《中国玩具和婴童用品行业白皮书》'},
+        {name:'中外玩具网',url:'https://www.ctoy.com.cn/',note:'老牌玩具行业媒体 · 展会/新品/供应链动态'},
+        {name:'玩具前沿',url:'https://www.wjcz.com.cn/',note:'玩具行业垂直媒体'},
+        {name:'微信搜狗 · 玩具行业干货',url:'https://weixin.sogou.com/weixin?type=2&query=%E7%8E%A9%E5%85%B7%E8%A1%8C%E4%B8%9A%E5%91%A8%E6%8A%A5',note:'定向搜"玩具行业周报/月报"公众号文章'},
+        {name:'36氪 · 潮玩',url:'https://36kr.com/search/articles/%E6%BD%AE%E7%8E%A9',note:'潮玩品牌观察'},
+      ],
+      '宠物':[
+        {name:'派读宠物行业大数据',url:'https://www.petdata.cn/',note:'年度《中国宠物行业白皮书》权威源'},
+        {name:'宠业家',url:'https://www.chongyejia.com/',note:'宠物行业头部媒体'},
+        {name:'微信搜狗 · 宠物白皮书',url:'https://weixin.sogou.com/weixin?type=2&query=%E5%AE%A0%E7%89%A9%E8%A1%8C%E4%B8%9A%E7%99%BD%E7%9A%AE%E4%B9%A6',note:'定向搜白皮书解读文章'},
+        {name:'京东宠物榜单',url:'https://top.jd.com/list?category=1620-0-0',note:'京东类目实时热销榜'},
+        {name:'天猫宠物 top',url:'https://top.tmall.com/',note:'天猫类目榜（自选宠物类目）'},
+      ],
+      '个护家清':[
+        {name:'化妆品报',url:'https://www.cbo.cn/',note:'老牌媒体 · 覆盖个护/家清/美妆'},
+        {name:'化妆品观察',url:'https://www.pinguan.com/',note:'名字带"化妆品"但覆盖个护家清'},
+        {name:'CBNData 消费大数据',url:'https://www.cbndata.com/',note:'第一财经消费数据 · 家清/个护榜单和报告'},
+        {name:'微信搜狗 · 家清行业',url:'https://weixin.sogou.com/weixin?type=2&query=%E5%AE%B6%E6%B8%85%E4%B8%AA%E6%8A%A4%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A',note:'定向搜行业报告解读'},
+        {name:'天猫家清 top',url:'https://top.tmall.com/',note:'天猫家清热销榜'},
+      ],
+      '美妆':[
+        {name:'聚美丽',url:'https://www.jumeili.cn/',note:'化妆品行业头部媒体'},
+        {name:'青眼',url:'https://www.qingyanwang.com.cn/',note:'美妆产业媒体 · 数据+深度报道'},
+        {name:'化妆品报',url:'https://www.cbo.cn/',note:'老牌媒体'},
+        {name:'化妆品观察',url:'https://www.pinguan.com/',note:'新兴品牌 & 供应链视角'},
+        {name:'微信搜狗 · 美妆行业研究',url:'https://weixin.sogou.com/weixin?type=2&query=%E7%BE%8E%E5%A6%86%E8%A1%8C%E4%B8%9A%E7%A0%94%E7%A9%B6',note:'定向搜行业研究/新锐品牌拆解'},
+      ],
+    };
+    // 老垃圾链接特征：包含 baidu.com/s? 或 ebrun.com（易邦已改版且部分 404）
+    const isJunk = (u)=>/(baidu\.com\/s|ebrun\.com)/.test(u||'');
+    Object.keys(BASELINE).forEach(k=>{
+      const cur = state.work.industry[k]; if(!cur) return;
+      cur.sources = cur.sources || [];
+      // 1) 移除老垃圾（用户自加的除外——判定：url 命中 baidu 搜索或 ebrun 都是老 seed 残留）
+      cur.sources = cur.sources.filter(s => !isJunk(s.url));
+      // 2) 补齐 baseline 里 name 不在的
+      const existNames = new Set(cur.sources.map(s=>s.name));
+      BASELINE[k].forEach(bs=>{
+        if(!existNames.has(bs.name)) cur.sources.push({...bs});
+      });
+    });
+    state.__work_sources_ver = WORK_SOURCES_VER;
+    save();
+  }catch(e){console.warn('syncIndustrySources',e);}
+}
 // v1.8：工作模块从「文件柜」升级为「方法论沉淀」；老 files 保留在 __legacy_files_backup 里，防止误删
 function migrateWorkModel(){
   try{
@@ -2128,15 +2198,15 @@ function renderProject(){
     </div>
   `).join('') || '<div class="empty">还没有复盘。做完一件事就记一条：做了什么 · 结果 · 3 条 next time。</div>';
   box.innerHTML = `
-    <div class="card" style="margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <h3>${escape(curPj)}</h3>
-        <div style="display:flex;gap:6px;">
-          <button class="btn small ghost" onclick="renameProject('${curPj}')">重命名</button>
-          <button class="btn small danger ghost" onclick="delProject('${curPj}')">删除项目</button>
-        </div>
+    <div class="project-header">
+      <div class="ph-info">
+        ${d.desc ? `<span class="ph-desc">${escape(d.desc)}</span>` : `<span class="ph-desc ph-empty">还没写项目说明</span>`}
       </div>
-      <div class="desc">${escape(d.desc||'')}</div>
+      <div class="ph-actions">
+        <button class="btn tiny ghost" onclick="editProjectDesc('${curPj}')" title="编辑说明">✎ 说明</button>
+        <button class="btn tiny ghost" onclick="renameProject('${curPj}')">重命名</button>
+        <button class="btn tiny danger ghost" onclick="delProject('${curPj}')">删除</button>
+      </div>
     </div>
     <div class="row">
       <div class="col">
@@ -2161,6 +2231,13 @@ function renderProject(){
       </div>
     </div>
   `;
+}
+function editProjectDesc(key){
+  const cur = state.work.project[key]; if(!cur) return;
+  const v = prompt('项目说明（一行简介，可留空）：', cur.desc||'');
+  if(v===null) return;
+  cur.desc = v.trim();
+  save(); renderProject();
 }
 
 /* ---- 认知卡 CRUD ---- */
@@ -3798,6 +3875,7 @@ function initAll(){
   injectMissingSeedBooks();
   patchBookMeta();
   migrateWorkModel();
+  syncIndustrySources();
   renderShelf();
   renderQuotes();
   renderIndustrySubtabs();
