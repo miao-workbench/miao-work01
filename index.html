@@ -656,6 +656,20 @@
   </div>
 </div>
 
+<div class="modal-mask" id="sourceModal">
+  <div class="modal">
+    <h3 id="smTitle">添加一个资讯来源</h3>
+    <div class="desc">保存公开可访问的链接，点「打开」在新窗口刷新，全程不登录你的账号。</div>
+    <div class="field"><label>来源名字</label><input id="sName" placeholder="例：Statista 玩具行业报告" /></div>
+    <div class="field"><label>URL</label><input id="sUrl" placeholder="https://..." /></div>
+    <div class="field"><label>备注（可选）</label><textarea id="sNote" placeholder="更新频率 / 重点栏目 / 使用方式"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="sourceCtx=null;closeModal('sourceModal')">取消</button>
+      <button class="btn" onclick="saveSource()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-mask" id="ideaModal">
   <div class="modal">
     <h3 id="imTitle">记一个选题</h3>
@@ -1320,10 +1334,19 @@ function saveBook(){
   if(editingBookId) openBookDetail(editingBookId);
 }
 function delBook(id){
-  if(!confirm('删除这本书？关联的划线金句会保留在金句本里但取消关联。')) return;
+  const qCount = (state.quotes||[]).filter(q=>q.bookId===id).length;
+  const msg = qCount>0
+    ? `删除这本书？\n\n关联的 ${qCount} 条金句会保留在金句本里，但会解除关联（原书名仍会显示为文本）。`
+    : '删除这本书？';
+  if(!confirm(msg)) return;
   state.books = (state.books||[]).filter(x=>x.id!==id);
-  // 取消关联
-  (state.quotes||[]).forEach(q=>{if(q.bookId===id) q.bookId=null;});
+  // 取消关联：清 bookId，同时把最后已知书名/作者写回 q.book/q.author 以便渲染兜底
+  (state.quotes||[]).forEach(q=>{
+    if(q.bookId===id){
+      q.bookId=null;
+      if(!q.book) q.book = ''; // 兜底
+    }
+  });
   save();closeModal('bookDetailModal');renderShelf();renderQuotes();
 }
 function openBookDetail(id){
@@ -1396,13 +1419,16 @@ function addQuoteForBook(bookId){
 function askAISummary(bookId){
   const b = state.books.find(x=>x.id===bookId);if(!b) return;
   const quotes = (state.quotes||[]).filter(q=>q.bookId===bookId);
-  const prompt = `请基于以下划线，总结《${b.title}》（${b.author||'佚名'}）的核心观点，2-3 句话，不要鸡汤。\n\n划线：\n${quotes.map((q,i)=>`${i+1}. ${q.text}`).join('\n')||'（暂无划线，请你根据自己了解写一版）'}\n\n请把总结写回工作台《${b.title}》的核心观点字段。`;
-  const ok = confirm('已经把下面这段提示词拷贝到剪贴板，你到对话里粘贴给我就行：\n\n'+prompt.slice(0,300)+'\n\n点确定复制。');
-  if(ok){
-    navigator.clipboard.writeText(prompt).then(
-      ()=>alert('已复制。切到 QoderWork 对话粘贴即可。'),
-      ()=>prompt('复制失败，请手动复制这段文字：',prompt)
+  const text = `请基于以下划线，总结《${b.title}》（${b.author||'佚名'}）的核心观点，2-3 句话，不要鸡汤。\n\n划线：\n${quotes.map((q,i)=>`${i+1}. ${q.text}`).join('\n')||'（暂无划线，请你根据自己了解写一版）'}\n\n请把总结写回工作台《${b.title}》的核心观点字段。`;
+  const ok = confirm(`要把这段提示词复制到剪贴板吗？\n\n${text.slice(0,300)}${text.length>300?'…':''}\n\n点确定复制，然后到 QoderWork 对话粘贴即可。`);
+  if(!ok) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(
+      ()=>alert('✓ 已复制到剪贴板。切到 QoderWork 对话粘贴（Cmd/Ctrl+V）即可。'),
+      ()=>prompt_fallback(text)
     );
+  }else{
+    prompt_fallback(text);
   }
 }
 
@@ -1459,9 +1485,15 @@ function renderQuotes(){
   if(!list.length){box.innerHTML='<div class="empty">还没有金句。点右上角「记一句」开始。</div>';return;}
   box.innerHTML = list.map(q=>{
     const linkedBook = q.bookId ? (state.books||[]).find(b=>b.id===q.bookId) : null;
-    const bookDisplay = linkedBook
-      ? `<a href="javascript:void(0)" onclick="openBookDetail('${linkedBook.id}')">📖 ${escape(linkedBook.title)}</a>`
-      : `📖 ${escape(q.book||'—')}`;
+    const orphaned = q.bookId && !linkedBook; // 有 bookId 但书已被删
+    let bookDisplay;
+    if(linkedBook){
+      bookDisplay = `<a href="javascript:void(0)" onclick="openBookDetail('${linkedBook.id}')">📖 ${escape(linkedBook.title)}</a>`;
+    }else if(orphaned){
+      bookDisplay = `📖 ${escape(q.book||'—')} <span class="pill" style="opacity:.6;">原书已删</span>`;
+    }else{
+      bookDisplay = `📖 ${escape(q.book||'—')}`;
+    }
     return `
     <div class="quote">
       <div class="q-text">「${escape(q.text)}」</div>
@@ -1675,24 +1707,41 @@ function delFile(kind,key,i){
   arr.splice(i,1);save();
   kind==='industry'?renderIndustry():renderProject();
 }
+let sourceCtx=null; // {key, editIndex}
 function addSource(kind,key){
-  const name = prompt('来源名字：');if(!name) return;
-  const url = prompt('URL：');if(!url) return;
-  const note = prompt('备注（可空）：')||'';
-  state.work.industry[key].sources.push({name,url,note});
-  save();renderIndustry();
+  sourceCtx = {key, editIndex:null};
+  document.getElementById('smTitle').innerText = `添加一个 ${key} 资讯来源`;
+  ['sName','sUrl','sNote'].forEach(id=>document.getElementById(id).value='');
+  openModal('sourceModal');
+}
+function editSource(kind,key,i){
+  const s = state.work.industry[key].sources[i]; if(!s) return;
+  sourceCtx = {key, editIndex:i};
+  document.getElementById('smTitle').innerText = `编辑 ${key} 资讯来源`;
+  document.getElementById('sName').value = s.name||'';
+  document.getElementById('sUrl').value  = s.url||'';
+  document.getElementById('sNote').value = s.note||'';
+  openModal('sourceModal');
+}
+function saveSource(){
+  if(!sourceCtx) return;
+  const name = document.getElementById('sName').value.trim();
+  const url  = document.getElementById('sUrl').value.trim();
+  const note = document.getElementById('sNote').value.trim();
+  if(!name){alert('来源名字不能空');return;}
+  if(!url){alert('URL 不能空');return;}
+  const arr = state.work.industry[sourceCtx.key].sources;
+  const obj = {name, url, note};
+  if(sourceCtx.editIndex!=null && arr[sourceCtx.editIndex]){
+    arr[sourceCtx.editIndex] = {...arr[sourceCtx.editIndex], ...obj};
+  }else{
+    arr.push(obj);
+  }
+  save();closeModal('sourceModal');sourceCtx=null;renderIndustry();
 }
 function delSource(kind,key,i){
   if(!confirm('删除这个来源？')) return;
   state.work.industry[key].sources.splice(i,1);save();renderIndustry();
-}
-function editSource(kind,key,i){
-  const s = state.work.industry[key].sources[i]; if(!s) return;
-  const name = prompt('来源名字：', s.name); if(name===null) return;
-  const url  = prompt('URL：', s.url);      if(url===null) return;
-  const note = prompt('备注（可空）：', s.note||''); if(note===null) return;
-  state.work.industry[key].sources[i] = {name:name.trim()||s.name, url:url.trim()||s.url, note:(note||'').trim()};
-  save();renderIndustry();
 }
 
 /* ========================================================================
@@ -2545,7 +2594,7 @@ function openFateDetail(id){
 function askFateAI(id){
   const p = state.mystic.profiles.find(x=>x.id===id);if(!p||!p.auto) return;
   const a = p.auto;
-  const prompt = `请帮我做一次命理综合解读，档案信息：
+  const text = `请帮我做一次命理综合解读，档案信息：
 姓名：${p.name||'匿名'}
 性别：${p.gender}
 阳历生日：${p.date} ${p.time||''}
@@ -2566,10 +2615,13 @@ function askFateAI(id){
 5. 最近三年运势主线
 
 要求：语气温和、不要太玄乎、给具体行动建议。`;
-  navigator.clipboard.writeText(prompt).then(()=>{
-    alert('分析提示词已复制 ✓\n粘贴给 Q 即可拿到深度解读，你可以贴回下面的「关键笔记」保存。');
-  }).catch(()=>alert('复制失败，控制台已打印'));
-  console.log(prompt);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('分析提示词已复制 ✓\n粘贴给 Q 即可拿到深度解读，你可以贴回下面的「关键笔记」保存。');
+    }).catch(()=>prompt_fallback(text));
+  }else{
+    prompt_fallback(text);
+  }
 }
 
 /* ========================================================================
@@ -2849,14 +2901,52 @@ function cmdkBuildIndex(){
     const book = q.bookId ? (state.books||[]).find(b=>b.id===q.bookId) : null;
     idx.push({
       kind:'读书·金句', label:(q.text||'').slice(0,80), sub:[q.topic,book&&book.title,q.source].filter(Boolean).join(' · '),
-      hay:[q.text,q.topic,q.source,book&&book.title].filter(Boolean).join(' '),
+      hay:[q.text,q.topic,q.source,book&&book.title,q.note,q.book].filter(Boolean).join(' '),
       go:()=>{switchPane('reading');document.querySelector('#readingSubtabs button[data-rd-tab="quotes"]').click();}
     });
   });
+  // 工作 · 行业来源
+  const industry = (state.work&&state.work.industry)||{};
+  Object.entries(industry).forEach(([cat,d])=>{
+    (d.sources||[]).forEach(s=>idx.push({
+      kind:'工作·'+cat+'·来源', label:s.name, sub:(s.note||s.url||'').slice(0,60),
+      hay:[s.name,s.url,s.note,cat].filter(Boolean).join(' '),
+      go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="industry"]')?.click();
+              const btn=document.querySelector(`#industrySubtabs button[data-ind="${cat}"]`);btn&&btn.click();}
+    }));
+    (d.files||[]).forEach(f=>idx.push({
+      kind:'工作·'+cat+'·文件', label:f.name, sub:[f.type,f.note].filter(Boolean).join(' · '),
+      hay:[f.name,f.type,f.note,f.link,cat].filter(Boolean).join(' '),
+      go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="industry"]')?.click();
+              const btn=document.querySelector(`#industrySubtabs button[data-ind="${cat}"]`);btn&&btn.click();}
+    }));
+  });
+  // 工作 · 项目文件
+  const project = (state.work&&state.work.project)||{};
+  Object.entries(project).forEach(([cat,d])=>{
+    (d.files||[]).forEach(f=>idx.push({
+      kind:'项目·'+cat, label:f.name, sub:[f.type,f.note].filter(Boolean).join(' · '),
+      hay:[f.name,f.type,f.note,f.link,cat,d.desc].filter(Boolean).join(' '),
+      go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="project"]')?.click();
+              const btn=document.querySelector(`#projectSubtabs button[data-pj="${cat}"]`);btn&&btn.click();}
+    }));
+  });
+  // 自媒体 · 选题
   ((state.media&&state.media.ideas)||[]).forEach(i=>idx.push({
     kind:'自媒体·选题', label:i.title||i.hook||'(无题)', sub:[i.plat,i.prio,i.tag].filter(Boolean).join(' · '),
     hay:[i.title,i.hook,i.plat,i.tag,i.note].filter(Boolean).join(' '),
-    go:()=>{switchPane('media');}
+    go:()=>{switchPane('media');setTimeout(()=>document.getElementById('ideasList')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}
+  }));
+  // 自媒体 · 热榜（小红书 / 抖音）
+  ((state.media&&state.media.xhsHot)||[]).forEach(h=>idx.push({
+    kind:'热榜·小红书', label:h.title, sub:[h.tag,h.hint].filter(Boolean).join(' · '),
+    hay:[h.title,h.tag,h.hint].filter(Boolean).join(' '),
+    go:()=>{switchPane('media');setTimeout(()=>document.getElementById('xhsHotList')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}
+  }));
+  ((state.media&&state.media.dyHot)||[]).forEach(h=>idx.push({
+    kind:'热榜·抖音', label:h.title, sub:[h.tag,h.hint].filter(Boolean).join(' · '),
+    hay:[h.title,h.tag,h.hint].filter(Boolean).join(' '),
+    go:()=>{switchPane('media');setTimeout(()=>document.getElementById('dyHotList')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}
   }));
   const mk = (state.mystic&&state.mystic.knowledge)||{};
   Object.entries(mk).forEach(([cat,arr])=>arr.forEach(k=>idx.push({
@@ -2937,8 +3027,21 @@ function initGlobalShortcuts(){
     if(mod && e.key.toLowerCase()==='k'){e.preventDefault();CMDK.open?cmdkClose():cmdkOpen();return;}
     // Cmd/Ctrl+B → 一键备份
     if(mod && e.key.toLowerCase()==='b' && !inField){e.preventDefault();exportAll();return;}
-    // Esc 关闭 palette（若已在输入框内则 palette 的 keydown 会处理）
-    if(e.key==='Escape' && CMDK.open){cmdkClose();return;}
+    // Esc 优先级：先关 palette，再关最上层 modal
+    if(e.key==='Escape'){
+      if(CMDK.open){cmdkClose();return;}
+      // 关掉最后一个（视觉上最上层）打开的 modal
+      const opened = [...document.querySelectorAll('.modal-mask.on')];
+      if(opened.length){
+        const top = opened[opened.length-1];
+        top.classList.remove('on');
+        // 保持副作用一致（清 fileCtx / sourceCtx / editingIdeaId）
+        if(top.id==='fileModal') fileCtx=null;
+        if(top.id==='sourceModal') sourceCtx=null;
+        if(top.id==='ideaModal') editingIdeaId=null;
+        return;
+      }
+    }
     if(inField) return;
     // 1..5 切换主标签
     const map = {'1':'reading','2':'work','3':'media','4':'mystic','5':'wenwan'};
