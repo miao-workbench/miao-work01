@@ -1323,6 +1323,32 @@ const BOOK_CORE_VIEWS = {
   b51:{cat:'思想·工具',view:'[要点]· 一切从实际出发：先看清楚是什么，别急着说该怎样\n· 抓主要矛盾：任何复杂局面都有一个"牵一发动全身"的点\n· 调查研究：没有调查就没有发言权——对生活、工作、感情都成立\n· 持久战思维：短期看不到成果的事，用"阶段论"给自己坚持的理由'},
 };
 const BOOK_CV_VER = 'v1.7-batch';
+const BOOK_INJECT_VER = 'v1.7.1-inject-b51';
+// 注入：新加进 seed 的书，让老用户也能看到
+function injectMissingSeedBooks(){
+  try{
+    if(!Array.isArray(state.books)) return;
+    if(state.__book_inject_ver === BOOK_INJECT_VER) return;
+    const existIds = new Set(state.books.map(b=>b.id));
+    const existTitles = new Set(state.books.map(b=>(b.title||'').trim()));
+    let changed = false;
+    (seed.books||[]).forEach(sb=>{
+      if(existIds.has(sb.id)) return;
+      if(existTitles.has((sb.title||'').trim())) return; // 用户手动加过同名书就不重复注入
+      const cv = BOOK_CORE_VIEWS[sb.id];
+      const injected = Object.assign({}, sb, {
+        category: cv ? cv.cat : (sb.category||''),
+        coreView: cv ? cv.view : (sb.coreView||''),
+        coreStatus: cv ? 'done' : 'pending',
+        ts: Date.now()
+      });
+      state.books.unshift(injected);
+      changed = true;
+    });
+    state.__book_inject_ver = BOOK_INJECT_VER;
+    if(changed) save(); else localStorage.setItem(KEY,JSON.stringify(state));
+  }catch(e){console.warn('injectMissingSeedBooks',e);}
+}
 function migrateBookCoreView(){
   try{
     if(!Array.isArray(state.books)) return;
@@ -3486,6 +3512,7 @@ function initAll(){
   migrateFateAuto();
   migrateMiaoFateReading();
   migrateBookCoreView();
+  injectMissingSeedBooks();
   renderShelf();
   renderQuotes();
   renderIndustry();
