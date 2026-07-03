@@ -1480,6 +1480,147 @@ function migrateWorkModel(){
     save();
   }catch(e){console.warn('migrateWorkModel',e);}
 }
+/* ---- v1.9.1 首批方法论内容注入 ---- */
+const WORK_CONTENT_VER = 'v1.9.1-init-content';
+function injectWorkContent(){
+  try{
+    if(state.__work_content_ver === WORK_CONTENT_VER) return;
+    state.work = state.work || {industry:{},project:{},todos:[]};
+    const now = Date.now();
+    // === 行业认知卡 ===
+    const indInsights = {
+      '玩具':[
+        {id:'ins_ip1',title:'IP 赛道供给现状（2026.07 快照）',tags:['数据','IP','基线'],
+         body:'搜索核心 IP 关键词已覆盖商家 1.64w，SKU 4.98w，近 30 天 GMV ≈2.7 亿（日均 672 万），月订单 5.2w 单，月买家 135.7w。\n整体 KBF 匹配率 67.2%（目标 80%），总需求 426 万条，未匹配 140 万条。\n玩具类目未匹配 top：品牌名称 2.4w（三丽鸥/MARD/布鲁可/乐高）、现货发货时效 5086。',
+         ts:now,updated:now},
+        {id:'ins_ip2',title:'正版 IP 打标准入门槛',tags:['规则','IP标'],
+         body:'赋标条件：IP 授权资质审核通过 + 签署 IP 协议 + 开通假一赔四 + IP 严选指数 ≥ 4.0。\n去标：指数 <4.0 → 去标不去严选；授权到期未续 → 去标不去严选；侵权投诉成立 → 下架。\n平台不收认证费（规避被认定为侵权共同受益方）。仅做形式审查，真实性由商家负责。',
+         ts:now,updated:now},
+        {id:'ins_ip3',title:'KBF 未匹配因子优先级',tags:['KBF','匹配率','策略'],
+         body:'P0 商品属性规格 83.4w（材质 48.5w > 功能 12.2w > 款式 8.5w > 风格 3.6w）\nP1 品牌名称 47.1w（全类目 100% 缺失，结构性硬缺口）\nP2 现货发货时效 5.7w（16/26 类目，商家未主动打标）\nP3 包装定制 3.7w（9 类目，布尔值"是"未接入服务化）\nP4 差异化因子：数码适用机型 2.86w、服饰发夹 1.23w、美妆功效 1.04w。\n核心问题：多值组合的分隔符+顺序+同义未归一（如"聚拢,防下垂"和"防下垂,聚拢"）。',
+         ts:now,updated:now}
+      ]
+    };
+    Object.entries(indInsights).forEach(([cat,arr])=>{
+      if(!state.work.industry[cat]) state.work.industry[cat]={sources:[],insights:[]};
+      const existing = state.work.industry[cat].insights||[];
+      const existIds = new Set(existing.map(x=>x.id));
+      arr.forEach(it=>{ if(!existIds.has(it.id)) existing.push(it); });
+      state.work.industry[cat].insights = existing;
+    });
+    // === 正版IP · Playbook ===
+    if(!state.work.project['正版IP']) state.work.project['正版IP']={desc:'IP 授权 · 联名 · 版权合作',playbooks:[],retros:[]};
+    const ipPB = state.work.project['正版IP'].playbooks||[];
+    const ipPBids = new Set(ipPB.map(x=>x.id));
+    const ipPlaybooks = [
+      {id:'pb_ip_cert',title:'IP 认证打标全链路 SOP',scene:'商家要申请正版 IP 标，或小二要批量推动打标时',
+       steps:[
+         '商家上传 IP 授权证书（授权链路：版权方→代理方→商家，完整闭环）',
+         '资质中心形式审查：材料完整性 + 主体名称一致 + 授权范围覆盖 1688 + 有效期',
+         '审核通过 → 商家签署 IP 协议 + 开通假一赔四',
+         '系统自动：该商家所有 IP 关联商品入严选（不亮标）',
+         '商品 IP 严选指数 ≥ 4.0 → 亮 IP 标 + 搜索加权 + 频道资源位',
+         '买家侧展示：正版授权 · 100% 正品 · 假一赔四 · 官方验货'
+       ],
+       traps:[
+         '不可跳过"假一赔四"——这是法务底线，去掉就没有正品服务保障',
+         '平台只做形式审查，不做实质担保（否则成共同侵权人）',
+         '授权到期 30 天前系统多通道预警（站内信+短信+钉钉），过期自动去标',
+         'IP 指数 <4.0 只去 IP 标不退严选——别把严选底层机制也一起断了',
+         '脏数据（已下架/非主营/专拍链接）必须小二人工确认排除原因，不可系统自动跳过'
+       ],
+       templates:'商家入驻白皮书核心章节：\n1. IP认证标/IP严选标定义和权益说明（搜索加权、标签展示、频道露出、流量倾斜）\n2. IP授权证书上传操作指引（授权IP路径 vs 原创IP路径）\n3. 常见驳回原因及修改建议\n4. 假一赔四协议签署说明\n5. IP资质到期续期操作和时间节点',
+       ts:now,updated:now},
+      {id:'pb_ip_3party',title:'IP 定制品三方合作（方案 C）',scene:'IP 方（如优酷）想变现、工厂想拿授权做爆款、1688 想扩 IP 供给时',
+       steps:[
+         '1688 开通开店绿通 → IP 方（优酷）在 1688 开官方旗舰店',
+         '官方大店能力：优酷店后端挂接 N 家源头工厂，商品/库存/发货打通，工厂直发',
+         '分销超买：1688 调用 B 端大买家池，为优酷店定向匹配确定性订单，锁定首批保底提货量',
+         '营销联动：剧播首日=1688 首发日；剧终日=IP 专场大促日。双端节奏对齐',
+         '数据闭环：店铺流水/粉丝/消费者数据全部沉淀在 IP 方官方店，可反哺内容用户画像'
+       ],
+       traps:[
+         '方案 A（直采）起订量 6-10 万包，优酷资金压力大且滞销风险 100% 自担——只适合已验证超级爆款',
+         '方案 B（纯授权）工厂前置投入 15-25 万保底金，小厂不敢接',
+         '方案 C 核心优势：工厂不掏保底金、优酷不压库存、分销超买锁首单',
+         '品牌资产归 IP 方（官方店是其资产），一次开店多 IP 复用，边际成本≈0'
+       ],
+       templates:'对 IP 方的核心话术：\n"不用建供应链，1688 开店绿通+官方大店把店+货+发货一站配齐；一个官方店承接 N 个 IP，一次开店、多 IP 复用、边际成本近零。"\n\n对工厂的核心话术：\n"不用付 10-20 万保底金，分销超买锁定首批订单，你只管供货发货。"',
+       ts:now,updated:now}
+    ];
+    ipPlaybooks.forEach(p=>{ if(!ipPBids.has(p.id)) ipPB.push(p); });
+    state.work.project['正版IP'].playbooks = ipPB;
+    // === 正版IP · 复盘 ===
+    const ipRetros = state.work.project['正版IP'].retros||[];
+    const ipRids = new Set(ipRetros.map(x=>x.id));
+    const ipRetroItems = [
+      {id:'rt_ip_mrd',title:'IP 定制品三方合作方案对比完成',date:'2026-07-02',
+       did:'完成了优酷×工厂×1688 三方合作的 A/B/C 三套方案对比文档。以纸巾 IP 联名为例，拆解了费用结构、库存风险、起量方式。方案 C（优酷1688开店+官方大店+分销超买）获得内部认可。',
+       result:'方案 C 被选定为推荐路径。优酷侧反馈"终于有一个不压库存的 IP 电商方案"；工厂侧反馈"不要保底金就敢试"。',
+       nextTime:['下一步需要找一个具体 IP（如优酷某档期剧）跑 MVP，验证"分销超买锁首单"的实操可行性','官方大店技术能力需要和产品确认上线时间节点','营销联动节奏表需要提前 45 天和优酷侧对齐']}
+    ];
+    ipRetroItems.forEach(r=>{ if(!ipRids.has(r.id)) ipRetros.push(r); });
+    state.work.project['正版IP'].retros = ipRetros;
+    // === 联营计划 · Playbook ===
+    if(!state.work.project['联营计划']) state.work.project['联营计划']={desc:'联营招商 · 服务商 · 品牌孵化',playbooks:[],retros:[]};
+    const lyPB = state.work.project['联营计划'].playbooks||[];
+    const lyPBids = new Set(lyPB.map(x=>x.id));
+    const lyPlaybooks = [
+      {id:'pb_ly_pool',title:'联营商品池分层 & 补充顺序',scene:'给联营商家分配作业目标、或小二要判断某商家达标进度时',
+       steps:[
+         '第一步：优先填充 P0（存量算法命中品）——算法例子池命中+商家店铺匹配，商家必做',
+         '第二步：脏数据排除——小二人工确认排除原因（已下架/信息错误/非主营/专拍链接/定制品），系统标记后缺口进入补充',
+         '第三步：从 P1（存量店铺高分品，严选指数≥4）+ 新增 P0（商机画像新发品，命中同款簇）补齐缺口',
+         '第四步：汇总三池达标品 ≥ 5 → 商家达标',
+         '每个品独立判定 14 项指标，部分达成不计入',
+         '所有热销 SKU 必须做成本拆解（除非算法品下无热销 SKU，可选商家主推 SKU）'
+       ],
+       traps:[
+         'P0 必做原则：商家不可跳过直接选 P1——算法推荐的核心品是第一优先',
+         '脏数据不可系统自动跳过，必须小二人工确认并填写原因',
+         '补充品同等标准：P1/新增P0 也要全部 14 项达标才计数',
+         '新增 P0 必须命中商机同款簇画像，随便发品不算'
+       ],
+       templates:'达标公式：\n达标商品数 = 存量算法命中有效达标品 + 存量P1补充达标品 + 新增P0补充达标品\n\n判定：≥5 → 达标；<5 → 未达标',
+       ts:now,updated:now},
+      {id:'pb_ly_kbf',title:'KBF 匹配率提升运营策略',scene:'匹配率低于目标（当前 67.2%→目标 80%）、需要拆解行动项给品类小二时',
+       steps:[
+         '解析需求：按一级类目 × Top5 因子 × Top5 v 值拉取未匹配明细（当前 130 因子行、520 v 值行）',
+         '分优先级：P0 属性规格 83.4w → P1 品牌 47.1w → P2 时效 5.7w → P3 包装定制 3.7w → P4 差异化长尾',
+         '存量优化-属性规格：高频未满足因子升级为发布页必填/强引导，同类目同款预测 v 值默认带出',
+         '存量优化-品牌：推动品牌商品扩入 AI 主库，对齐产品侧口径',
+         '存量优化-时效：已具备现货能力但未修改时效的商家 → 产品方案直接覆盖 + 宣讲权益牵引',
+         '存量优化-包装定制：作为买家服务提升供给覆盖度，具备能力的商家产品化快速覆盖',
+         '增量引入：输出千机CRM"大盘缺口数据卡片"，向站外客户证明"平台无此货、入驻即独家"',
+         '权益承接：诚信通→日常频道降门槛坑位；源旗/超工→S/A 级大促海景房资源位'
+       ],
+       traps:[
+         '多值组合分隔符+顺序未归一是第一大系统性损耗（如"聚拢,防下垂"和"防下垂,聚拢"被视为不同值）',
+         '需求值转译失败率 8.23%——转译前必须先清洗数据再翻译',
+         '"是"这种布尔打标口径和真实时效分离，多类目全量未匹配——需算法转译优化',
+         '品牌缺失是结构性问题（100% 缺失），不是商家不填而是产品侧 CPV 未纳入品牌匹配'
+       ],
+       templates:'对外招商核心话术：\n"您这类商品/属性在1688大盘目前是完全空白/极度稀缺的，每天有 X 万买家在找但平台没货，现在入驻发品就是独家生意，直接吃定招红利。"\n\n目标拆解：匹配率 67.2%→80% = 未匹配从 140w 降到 85w，需净压降 55w+。',
+       ts:now,updated:now}
+    ];
+    lyPlaybooks.forEach(p=>{ if(!lyPBids.has(p.id)) lyPB.push(p); });
+    state.work.project['联营计划'].playbooks = lyPB;
+    // === 联营计划 · 复盘 ===
+    const lyRetros = state.work.project['联营计划'].retros||[];
+    const lyRids = new Set(lyRetros.map(x=>x.id));
+    const lyRetroItems = [
+      {id:'rt_ly_kbf',title:'KBF 匹配率提升方案初稿完成',date:'2026-07-03',
+       did:'完成了 KBF 匹配率提升运营方案初稿：拉取了 26 个一级类目 × Top5 因子 × Top5 v 值的完整明细（130 因子行、520 v 值行）。分 P0-P4 优先级；产出存量优化 4 条策略 + 增量引入 3 条策略。同步产出了匹配率较低品类的明细表。',
+       result:'方案处于【待确认】状态，需要和 BI 对焦输出"供给画像"数据（存量底池 800w 品、只缺 1 个 KBF 的需求筛选、大盘绝对缺口清单）。目标拆分也待 BI 拆解。',
+       nextTime:['和 BI 对焦"存量供给画像"数据产出节奏（List A/B/C 三份清单）','拉品类小二 review Top3 类目的未匹配 v 值，确认是真缺口还是口径脏数据','把"联营品类商发共建地图"和联营目标品类对齐，输出定向招商画像']}
+    ];
+    lyRetroItems.forEach(r=>{ if(!lyRids.has(r.id)) lyRetros.push(r); });
+    state.work.project['联营计划'].retros = lyRetros;
+
+    state.__work_content_ver = WORK_CONTENT_VER;
+    save();
+  }catch(e){console.warn('injectWorkContent',e);}
+}
 const BOOK_INJECT_VER = 'v1.7.1-inject-b51';
 // v1.8.1：单独补/修 seed 书的元信息（封面、作者拼写等），保护用户手动改过的字段
 const BOOK_META_VER = 'v1.8.1-b51-cover';
@@ -4000,6 +4141,7 @@ function initAll(){
   patchBookMeta();
   migrateWorkModel();
   syncIndustrySources();
+  injectWorkContent();
   renderShelf();
   renderQuotes();
   renderIndustrySubtabs();
