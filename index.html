@@ -932,7 +932,7 @@ const seed = {
     {id:'b48',title:'《金刚经》说什么',author:'南怀瑾',cover:'https://cdn.weread.qq.com/weread/cover/87/YueWen_22791651/t6_YueWen_22791651.jpg',reader:'https://weread.qq.com/web/reader/e5832360715bc5e3e581083',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
     {id:'b49',title:'俗女养成记（同名影视原著）',author:'江鹅',cover:'https://cdn.weread.qq.com/weread/cover/90/3300011890/t6_3300011890.jpg',reader:'https://weread.qq.com/web/reader/d2932250813ab6b25g010b64',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
     {id:'b50',title:'桃花源没事儿',author:'',cover:'https://cdn.weread.qq.com/weread/cover/13/cpplatform_3gn7abh5vn4enmll5zfhai/t6_cpplatform_3gn7abh5vn4enmll5zfhai1756264952.jpg',reader:'https://weread.qq.com/web/reader/676320b0813aba52cg0179ad',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
-    {id:'b51',title:'毛选里的顶级方法论：年轻人的第一本问题解决手册',author:'王明',cover:'',reader:'',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b51',title:'毛选里的顶级方法论：年轻人的第一本问题解决手册',author:'王旺',cover:'https://cdn.weread.qq.com/weread/cover/97/cpplatform_7yqfd2rcvzy6q8bncg87wh/t6_cpplatform_7yqfd2rcvzy6q8bncg87wh1782442391.jpg',reader:'',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
   ],
   quotes: [
     {id:'q1',text:'把脑子里乱七八糟的想法，变成有结构的文字。不管有没有人看，写完了，我就比昨天更清楚了一点。',book:'又是一年618（公众号自摘）',author:'互联网女英雄',topic:'成长',note:'我的写作原点，贴给自己每天看一眼。',bookId:null,ts:Date.now()},
@@ -1386,6 +1386,31 @@ function migrateWorkModel(){
   }catch(e){console.warn('migrateWorkModel',e);}
 }
 const BOOK_INJECT_VER = 'v1.7.1-inject-b51';
+// v1.8.1：单独补/修 seed 书的元信息（封面、作者拼写等），保护用户手动改过的字段
+const BOOK_META_VER = 'v1.8.1-b51-cover';
+const BOOK_META_PATCHES = {
+  b51: {
+    cover: 'https://cdn.weread.qq.com/weread/cover/97/cpplatform_7yqfd2rcvzy6q8bncg87wh/t6_cpplatform_7yqfd2rcvzy6q8bncg87wh1782442391.jpg',
+    // 老版本 seed 拼错，作者应该是"王旺"
+    fixAuthor: {from:'王明', to:'王旺'},
+  },
+};
+function patchBookMeta(){
+  try{
+    if(state.__book_meta_ver === BOOK_META_VER) return;
+    if(!Array.isArray(state.books)) return;
+    let changed = false;
+    Object.entries(BOOK_META_PATCHES).forEach(([id,patch])=>{
+      const b = state.books.find(x=>x.id===id); if(!b) return;
+      if(patch.cover && !b.cover){ b.cover = patch.cover; changed = true; }
+      if(patch.fixAuthor && b.author === patch.fixAuthor.from){
+        b.author = patch.fixAuthor.to; changed = true;
+      }
+    });
+    state.__book_meta_ver = BOOK_META_VER;
+    if(changed) save(); else localStorage.setItem(KEY,JSON.stringify(state));
+  }catch(e){console.warn('patchBookMeta',e);}
+}
 // 注入：新加进 seed 的书，让老用户也能看到
 function injectMissingSeedBooks(){
   try{
@@ -3771,6 +3796,7 @@ function initAll(){
   migrateMiaoFateReading();
   migrateBookCoreView();
   injectMissingSeedBooks();
+  patchBookMeta();
   migrateWorkModel();
   renderShelf();
   renderQuotes();
