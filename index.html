@@ -335,6 +335,61 @@
   .filter-bar .chip{background:var(--bg-2);color:var(--ink-2);padding:5px 12px;border-radius:999px;font-size:12px;border:none;}
   .filter-bar .chip.on{background:var(--accent);color:#fff;}
   .filter-bar input.search{flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;}
+
+  /* ------- 内嵌划线小表单（书籍详情） ------- */
+  .bd-inline-quote{
+    background:var(--bg-2);border:1px dashed var(--line);border-radius:10px;
+    padding:12px;margin:10px 0 14px 0;
+  }
+  .bd-inline-quote textarea{
+    width:100%;background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:8px 10px;font-size:14px;min-height:60px;resize:vertical;
+    font-family:var(--serif);line-height:1.7;
+  }
+  .bd-inline-quote .row2{
+    display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;
+  }
+  .bd-inline-quote input[type="text"]{
+    flex:1;min-width:120px;background:#fff;border:1px solid var(--line);
+    border-radius:6px;padding:6px 10px;font-size:13px;
+  }
+  .bd-inline-quote .hint{font-size:11px;color:var(--ink-3);margin-top:4px;}
+
+  /* ------- 响应式（v1.4） ------- */
+  @media(max-width:720px){
+    body{flex-direction:column;}
+    aside.side{
+      width:auto;position:sticky;top:0;height:auto;
+      padding:14px 14px 10px 14px;z-index:20;
+      border-right:none;border-bottom:1px solid var(--line);
+      box-shadow:0 1px 4px rgba(60,40,20,.06);
+    }
+    .brand{font-size:18px;margin-bottom:0;}
+    .brand small{display:inline-block;margin-left:8px;margin-top:0;}
+    .today{margin:4px 0 10px 0;}
+    nav.tabs{flex-direction:row;flex-wrap:wrap;gap:4px;}
+    nav.tabs button{padding:6px 10px;font-size:13px;flex:none;}
+    nav.tabs .ic{display:none;}
+    .side .foot{display:none;} /* 备份按钮通过 Cmd/Ctrl+B 或桌面端使用 */
+    main{padding:20px 16px 80px 16px;max-width:100%;}
+    h1.page{font-size:22px;}
+    .page-sub{font-size:12px;margin-bottom:16px;}
+    .card{padding:14px;border-radius:10px;}
+    .card h3{font-size:16px;}
+    .row{gap:10px;}
+    .shelf-grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:14px 10px;}
+    .subtabs{gap:2px;margin-bottom:12px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+    .subtabs button{padding:7px 10px;font-size:13px;flex:none;white-space:nowrap;}
+    .modal{padding:18px !important;max-width:calc(100vw - 24px) !important;border-radius:12px;}
+    .modal.wide{max-width:calc(100vw - 24px) !important;}
+    .modal-actions{flex-wrap:wrap;}
+    .filter-bar{gap:4px;}
+    .filter-bar input.search{min-width:100%;}
+    .statusbar{font-size:11px;padding:6px 10px;gap:8px;overflow-x:auto;white-space:nowrap;}
+    .statusbar .sb-btn{padding:4px 8px;font-size:11px;}
+    .cmdk{width:calc(100vw - 24px);}
+    .quote .q-actions{position:static;display:flex;margin-top:8px;} /* 触屏无 hover：始终显示 */
+  }
 </style>
 </head>
 <body>
@@ -1378,8 +1433,16 @@ function openBookDetail(id){
 
         <div class="bd-section bd-quotes">
           <h4>划线金句（${quotes.length}）
-            <button class="btn small" onclick="addQuoteForBook('${b.id}')">＋ 加一条划线</button>
+            <button class="btn small ghost" onclick="addQuoteForBook('${b.id}')" title="打开完整表单填更详细的字段">完整表单</button>
           </h4>
+          <div class="bd-inline-quote">
+            <textarea id="bdQuickText" placeholder="随手记一条划线…（支持多行，「」不用打）"></textarea>
+            <div class="row2">
+              <input type="text" id="bdQuickTopic" list="qTopicList" placeholder="主题（可空，默认「其他」）" />
+              <button class="btn small" onclick="saveInlineQuoteForBook('${b.id}')">＋ 存这条</button>
+            </div>
+            <div class="hint">保存后停留在本页，可继续记下一条。Enter=换行，Cmd/Ctrl+Enter=保存。</div>
+          </div>
           ${quotes.length? quotes.map(q=>`
             <div class="quote">
               <div class="q-text">「${escape(q.text)}」</div>
@@ -1404,6 +1467,40 @@ function openBookDetail(id){
   `;
   document.getElementById('bookDetailBody').innerHTML = html;
   openModal('bookDetailModal');
+  // 内嵌划线小表单：Cmd/Ctrl+Enter 快捷保存 + 自动聚焦
+  const ta = document.getElementById('bdQuickText');
+  if(ta){
+    ta.addEventListener('keydown',ev=>{
+      if((ev.metaKey||ev.ctrlKey) && ev.key==='Enter'){
+        ev.preventDefault();
+        saveInlineQuoteForBook(id);
+      }
+    });
+  }
+}
+function saveInlineQuoteForBook(bookId){
+  const b = (state.books||[]).find(x=>x.id===bookId); if(!b) return;
+  const ta = document.getElementById('bdQuickText');
+  const topicInp = document.getElementById('bdQuickTopic');
+  const text = (ta && ta.value||'').trim();
+  if(!text){ if(ta) ta.focus(); return; }
+  const topic = ((topicInp && topicInp.value)||'').trim() || '其他';
+  const q = {
+    id:'q_'+Date.now()+'_'+Math.floor(Math.random()*999),
+    bookId, book:b.title, author:b.author||'',
+    text, topic, source:'', note:'', ts:Date.now(),
+  };
+  state.quotes = state.quotes || [];
+  state.quotes.unshift(q);
+  save();
+  renderQuotes();renderShelf();
+  // 重新渲染详情内容以刷新划线列表 + 计数，同时保持弹窗打开
+  openBookDetail(bookId);
+  // 保留 topic 便于连续记录同主题（text 清空以准备下一条）
+  const ta2 = document.getElementById('bdQuickText');
+  const topicInp2 = document.getElementById('bdQuickTopic');
+  if(topicInp2) topicInp2.value = topic==='其他' ? '' : topic;
+  if(ta2){ ta2.value=''; ta2.focus(); }
 }
 function addQuoteForBook(bookId){
   returnToBookId = bookId;
