@@ -1198,12 +1198,19 @@ function load(){
   }catch(e){console.error(e);return structuredClone(seed);}
 }
 // 命理档案的 auto 字段迁移，放在 initAll 里做（那时命理算法函数已可用）
+// v1.6：把之前用"简化上升"算出的 auto 全部重算一次；此后再切算法只需 bump 版本号
+const FATE_ALGO_VER = 'v1.6-asc-meeus';
 function migrateFateAuto(){
   try{
     if(state.mystic && Array.isArray(state.mystic.profiles)){
       let changed = false;
       state.mystic.profiles.forEach(p=>{
-        if(!p.auto && p.date){p.auto = computeFate(p); changed=true;}
+        if(!p.date) return;
+        const needRecalc = !p.auto || p.auto.__algo !== FATE_ALGO_VER;
+        if(needRecalc){
+          const next = computeFate(p);
+          if(next){ next.__algo = FATE_ALGO_VER; p.auto = next; changed = true; }
+        }
       });
       if(changed) save();
     }
@@ -2519,6 +2526,143 @@ function risingSignIndex(sunIdx, hour){
   return (sunIdx + shift) % 12;
 }
 
+/* ================================================================
+   精确上升星座算法（v1.6 引入）
+   —— Meeus 公式 + 中国城市坐标表，替换掉之前的简化推算
+   参考：Jean Meeus《Astronomical Algorithms》Chapter 13, 21
+================================================================ */
+
+// 中国常见地名 → [经度°E, 纬度°N]；用于给上升星座计算提供准确的地理位置
+const CITY_GEO = {
+  // 直辖市 / 特别行政区
+  '北京':[116.4,39.9],'上海':[121.5,31.2],'天津':[117.2,39.1],'重庆':[106.5,29.6],
+  '香港':[114.2,22.3],'澳门':[113.5,22.2],'台北':[121.5,25.0],'台湾':[121.5,25.0],
+  // 省级 fallback（省会/首府）
+  '河北':[114.5,38.0],'山西':[112.6,37.9],'内蒙古':[111.7,40.8],
+  '辽宁':[123.4,41.8],'吉林':[125.3,43.9],'黑龙江':[126.6,45.8],
+  '江苏':[118.8,32.0],'浙江':[120.2,30.3],'安徽':[117.3,31.9],
+  '福建':[119.3,26.1],'江西':[115.9,28.7],'山东':[117.0,36.7],
+  '河南':[113.6,34.7],'湖北':[114.3,30.6],'湖南':[112.9,28.2],
+  '广东':[113.3,23.1],'广西':[108.4,22.8],'海南':[110.2,20.0],
+  '四川':[104.1,30.7],'贵州':[106.7,26.6],'云南':[102.7,25.0],
+  '西藏':[91.1,29.6],'陕西':[108.9,34.3],'甘肃':[103.8,36.1],
+  '青海':[101.8,36.6],'宁夏':[106.3,38.5],'新疆':[87.6,43.8],
+  // 主要城市
+  '广州':[113.3,23.1],'深圳':[114.1,22.5],'杭州':[120.2,30.3],
+  '南京':[118.8,32.0],'成都':[104.1,30.7],'武汉':[114.3,30.6],
+  '西安':[108.9,34.3],'郑州':[113.6,34.7],'长沙':[112.9,28.2],
+  '合肥':[117.3,31.9],'福州':[119.3,26.1],'厦门':[118.1,24.5],
+  '青岛':[120.4,36.1],'济南':[117.0,36.7],'沈阳':[123.4,41.8],
+  '大连':[121.6,38.9],'哈尔滨':[126.6,45.8],'长春':[125.3,43.9],
+  '太原':[112.6,37.9],'石家庄':[114.5,38.0],'昆明':[102.7,25.0],
+  '贵阳':[106.7,26.6],'南宁':[108.4,22.8],'海口':[110.2,20.0],
+  '三亚':[109.5,18.3],'兰州':[103.8,36.1],'银川':[106.3,38.5],
+  '西宁':[101.8,36.6],'乌鲁木齐':[87.6,43.8],'拉萨':[91.1,29.6],
+  '呼和浩特':[111.7,40.8],
+  // 江苏
+  '苏州':[120.6,31.3],'无锡':[120.3,31.6],'常州':[119.9,31.8],
+  '徐州':[117.2,34.3],'南通':[120.9,32.0],'连云港':[119.2,34.6],
+  '扬州':[119.4,32.4],'镇江':[119.4,32.2],'泰州':[119.9,32.5],
+  '盐城':[120.1,33.4],'淮安':[119.0,33.6],'宿迁':[118.3,33.9],
+  // 浙江
+  '宁波':[121.5,29.9],'温州':[120.7,28.0],'嘉兴':[120.8,30.8],
+  '绍兴':[120.6,30.0],'金华':[119.6,29.1],'台州':[121.4,28.7],
+  '湖州':[120.1,30.9],'衢州':[118.9,28.9],'丽水':[119.9,28.5],'舟山':[122.2,30.0],
+  // 安徽（补齐地级市+常见县级）
+  '安庆':[117.05,30.5],'芜湖':[118.4,31.35],'蚌埠':[117.4,32.9],
+  '马鞍山':[118.5,31.7],'淮北':[116.8,33.9],'铜陵':[117.8,30.9],
+  '阜阳':[115.8,32.9],'淮南':[117.0,32.6],'六安':[116.5,31.7],
+  '宿州':[116.9,33.6],'亳州':[115.8,33.9],'池州':[117.5,30.7],
+  '黄山':[118.3,29.7],'滁州':[118.3,32.3],'宣城':[118.8,30.9],
+  '潜山':[116.6,30.6],'无为':[117.9,31.3],'桐城':[116.9,31.05],'天长':[119.0,32.7],
+  // 福建
+  '泉州':[118.7,24.9],'漳州':[117.7,24.5],'莆田':[119.0,25.4],
+  '宁德':[119.5,26.7],'三明':[117.6,26.3],'龙岩':[117.0,25.1],
+  '南平':[118.2,27.3],'福安':[119.6,27.1],'福鼎':[120.2,27.3],
+  // 山东
+  '烟台':[121.4,37.5],'威海':[122.1,37.5],'潍坊':[119.1,36.7],
+  '临沂':[118.4,35.1],'淄博':[118.1,36.8],'东营':[118.7,37.4],
+  // 广东
+  '珠海':[113.6,22.3],'汕头':[116.7,23.4],'佛山':[113.1,23.0],
+  '中山':[113.4,22.5],'惠州':[114.4,23.1],'东莞':[113.8,23.0],
+  '湛江':[110.4,21.3],'肇庆':[112.5,23.0],
+  // 河南
+  '洛阳':[112.4,34.6],'开封':[114.3,34.8],'许昌':[113.8,34.0],
+  '南阳':[112.5,33.0],'新乡':[113.9,35.3],
+  // 湖北
+  '襄阳':[112.1,32.0],'宜昌':[111.3,30.7],'荆州':[112.2,30.3],'黄冈':[114.9,30.5],
+  // 湖南
+  '株洲':[113.2,27.8],'湘潭':[112.9,27.8],'岳阳':[113.1,29.4],'常德':[111.7,29.0],
+  // 四川
+  '绵阳':[104.7,31.5],'德阳':[104.4,31.1],'南充':[106.1,30.8],'宜宾':[104.6,28.8],
+  // 陕西
+  '咸阳':[108.7,34.3],'宝鸡':[107.1,34.4],'渭南':[109.5,34.5],
+  // 辽宁
+  '鞍山':[122.9,41.1],'抚顺':[123.9,41.9],'本溪':[123.8,41.3],
+  // 江西
+  '南昌':[115.9,28.7],'九江':[115.9,29.7],'赣州':[114.9,25.8],'上饶':[117.9,28.5],
+};
+
+// 从"安徽/芜湖/无为"或"福建福安"等自由文本中匹配一个城市；未匹配返回 null
+function parseGeo(place){
+  if(!place) return null;
+  const s = String(place);
+  // 从最具体（长）到最粗略（短）匹配
+  const keys = Object.keys(CITY_GEO).sort((a,b)=>b.length-a.length);
+  for(const k of keys){
+    if(s.indexOf(k)>=0) return {name:k, lon:CITY_GEO[k][0], lat:CITY_GEO[k][1]};
+  }
+  return null;
+}
+
+// 格林尼治平恒星时（度）· Meeus (12.4)
+function gmstDeg(jd){
+  const T = (jd - 2451545.0) / 36525.0;
+  let t = 280.46061837
+        + 360.98564736629 * (jd - 2451545.0)
+        + 0.000387933 * T * T
+        - (T*T*T) / 38710000.0;
+  t = ((t % 360) + 360) % 360;
+  return t;
+}
+
+// 上升点黄经（度，0-360）· Meeus (13.4)
+// jd_UT 为世界时儒略日；lonDeg 东经为正、纬度北为正
+function computeAscendantDeg(jd_UT, lonDeg, latDeg){
+  const rad = Math.PI / 180;
+  const T = (jd_UT - 2451545.0) / 36525.0;
+  // 平均黄赤交角（Meeus 22.2 简化式）
+  const eps = 23.4392911 - 0.0130042 * T - 0.00000164 * T*T + 0.000000504 * T*T*T;
+  // 当地恒星时 = GMST + 东经；也就是 RAMC（度）
+  let ramc = (gmstDeg(jd_UT) + lonDeg) % 360;
+  if(ramc < 0) ramc += 360;
+  const R = ramc * rad, E = eps * rad, L = latDeg * rad;
+  // asc = atan2(cos(RAMC), -(sin(RAMC)*cos(eps) + tan(lat)*sin(eps)))
+  let asc = Math.atan2(Math.cos(R), -(Math.sin(R)*Math.cos(E) + Math.tan(L)*Math.sin(E)));
+  asc = asc / rad;
+  asc = ((asc % 360) + 360) % 360;
+  return asc;
+}
+
+// 精确上升星座 index：需要出生地地理坐标
+function risingSignIndexAccurate(y, m, d, hourLocal, geo){
+  if(!geo) return null;
+  // 北京时区 UTC+8：把本地钟表时间换成世界时
+  // 注：这里我们**不**做真太阳时校正——恒星时公式已经用地理经度精确到分钟级
+  const hourUT = hourLocal - 8;
+  // 处理跨日：hour 可能为负或 >=24，用 Date 归一化到实际的 UT 日期
+  const base = new Date(Date.UTC(y, m-1, d, 0, 0, 0));
+  const shifted = new Date(base.getTime() + hourUT * 3600 * 1000);
+  const jd = toJD(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth()+1,
+    shifted.getUTCDate(),
+    shifted.getUTCHours() + shifted.getUTCMinutes()/60 + shifted.getUTCSeconds()/3600
+  );
+  const ascDeg = computeAscendantDeg(jd, geo.lon, geo.lat);
+  return Math.floor(ascDeg / 30) % 12;
+}
+
 // 生肖（简化：以立春为界，2/4 之前算上一年）
 function chineseZodiac(y,m,d){
   let year = y;
@@ -2620,7 +2764,17 @@ function computeFate(profile){
   const hourUT = hourLocal - 8;
   const sunIdx = sunSignIndex(M,D);
   const moonIdx = moonSignIndex(Y,M,D,hourUT);
-  const risingIdx = risingSignIndex(sunIdx, hourLocal); // 上升用本地时间近似
+  // 上升星座：优先用精确算法（需要出生地），回退到简化算法
+  const geo = parseGeo(profile.place);
+  let risingIdx, risingMethod;
+  if(geo && profile.time){
+    const accIdx = risingSignIndexAccurate(Y, M, D, hourLocal, geo);
+    if(accIdx!=null){ risingIdx = accIdx; risingMethod='accurate'; }
+  }
+  if(risingIdx==null){
+    risingIdx = risingSignIndex(sunIdx, hourLocal);
+    risingMethod = 'approx';
+  }
   const zodiac = chineseZodiac(Y,M,D);
   const yGZ = yearGZ(Y,M,D);
   const mGZ = monthGZ(Y,M,D,yGZ.ganIdx);
@@ -2636,6 +2790,8 @@ function computeFate(profile){
     sunMode: SIGN_MODE[sunIdx],
     moon: SIGN_NAMES[moonIdx]+'座',
     rising: SIGN_NAMES[risingIdx]+'座',
+    risingMethod, // 'accurate' | 'approx'
+    geo, // { name, lon, lat } or null
     zodiac: zodiac.animal,
     bazi,
     wuxing: wx,
@@ -2842,6 +2998,7 @@ function saveFate(){
     ts:Date.now(),
   };
   obj.auto = computeFate(obj);
+  if(obj.auto) obj.auto.__algo = FATE_ALGO_VER;
   if(editingFateId){
     const i=state.mystic.profiles.findIndex(x=>x.id===editingFateId);
     state.mystic.profiles[i]={...state.mystic.profiles[i],...obj};
@@ -2864,7 +3021,7 @@ function delFate(id){
 function openFateDetail(id){
   const p = state.mystic.profiles.find(x=>x.id===id);if(!p) return;
   let a = p.auto;
-  if(!a){a = computeFate(p);p.auto=a;save();}
+  if(!a){a = computeFate(p);if(a) a.__algo=FATE_ALGO_VER;p.auto=a;save();}
   if(!a){alert('生日格式不对，无法生成命理。');return;}
   const wxTotal = Object.values(a.wuxing).reduce((s,x)=>s+x,0)||1;
   const wxOrder = ['金','木','水','火','土'];
@@ -2892,7 +3049,7 @@ function openFateDetail(id){
             <div class="row-kv">
               <div><span>太阳星座</span> <b>${escape(a.sun)}</b>（${escape(a.sunElement)}象·${escape(a.sunMode)}宫）</div>
               <div><span>月亮星座</span> <b>${escape(a.moon)}</b></div>
-              <div><span>上升星座</span> <b>${escape(a.rising)}</b> <span style="color:var(--ink-3);font-size:11px;">（简化算法·参考用）</span></div>
+              <div><span>上升星座</span> <b>${escape(a.rising)}</b> <span style="color:var(--ink-3);font-size:11px;">${a.risingMethod==='accurate'?`（精确算法·基于${escape(a.geo&&a.geo.name||'—')}）`:'（简化算法·参考用）'}</span></div>
               <div><span>生肖</span> <b>${escape(a.zodiac)}</b></div>
             </div>
           </div>
@@ -2917,7 +3074,7 @@ function openFateDetail(id){
         </div>
       </details>
 
-      <div class="disclaimer">⚠ 说明：本地算法为简化版本。星座/生肖/干支/五行相对准确；月亮星座、上升星座、紫微命宫使用简化模型，可能存在 ±1 星座/±1 宫的误差。若要精确排盘，请使用「测测」「新月占星」「紫微在线」等专业工具复核。</div>
+      <div class="disclaimer">⚠ 说明：本地算法一览——星座/生肖/干支/五行为标准算法；<b>上升星座已升级到 Meeus 精确公式（v1.6）</b>，填了出生地就走精确算法（含约 40 个中国主要城市/县坐标），否则走简化算法；月亮星座、紫微命宫仍为简化模型（可能有 ±1 星座/±1 宫误差）。若要精确排盘复核，可用「测测」「新月占星」等专业工具。</div>
 
       <div class="modal-actions" style="margin-top:16px;">
         <button class="btn ghost" onclick="closeModal('fateDetailModal')">关闭</button>
