@@ -198,6 +198,18 @@
   .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
   .know h4{margin:0 0 6px 0;font-family:var(--serif);font-size:16px;color:var(--ink);}
   .know p{margin:6px 0;font-size:13px;color:var(--ink-2);line-height:1.75;}
+  .fate-lens-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:linear-gradient(90deg,#FBF7EE,#F3E8CE);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+  .fate-lens-bar .lens-label{font-family:var(--serif);font-size:13px;color:var(--ink);margin-right:4px;}
+  .fate-lens-bar .lens-chip{padding:4px 10px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font-size:12px;cursor:pointer;transition:all .15s;}
+  .fate-lens-bar .lens-chip:hover{border-color:var(--accent);color:var(--accent);}
+  .fate-lens-bar .lens-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .fate-lens-bar .lens-hint{font-size:12px;color:var(--ink-3);margin-left:auto;}
+  .know-personal{margin-top:10px;padding:10px 12px;background:linear-gradient(to bottom,#FBF7EE,#F6EFDC);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:13px;line-height:1.8;color:var(--ink);}
+  .know-personal .kp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .know-personal .kp-head b{font-family:var(--serif);font-size:13px;color:var(--accent-2);letter-spacing:.3px;}
+  .know-personal .kp-head .kp-edit{font-size:11px;color:var(--ink-3);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;}
+  .know-personal p{margin:2px 0;font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-wrap;}
+  .know-personal .kp-empty{font-size:12px;color:var(--ink-3);font-style:italic;}
 
   /* Reveal */
   .hidden{display:none !important;}
@@ -561,6 +573,7 @@
     </div>
 
     <div data-my-pane="knowledge">
+      <div id="fateLensBar" class="fate-lens-bar"></div>
       <div class="subtabs" id="mysticKnowSubtabs" style="border:none;flex-wrap:wrap;">
         <button data-cat="星座" class="active">星座</button>
         <button data-cat="星盘">星盘</button>
@@ -1195,6 +1208,45 @@ function migrateFateAuto(){
       if(changed) save();
     }
   }catch(e){console.warn('migrateFateAuto',e);}
+}
+
+// v1.5 迁移：把 Q 之前给妙妙做过的综合命理解读，回填到她的档案关键笔记里（仅首次）
+const MIAO_FATE_READING_V1 = `【综合解读 · Q 给妙妙的一次深聊，2026 版】
+
+一、性格底色（三要素协同）
+太阳天秤 · 月亮处女 · 上升狮子——这套组合极像一位"外表大方、内在讲究、骨子里想被看见"的姑娘。天秤给了你从容与审美，凡事讲平衡、爱和气、也会因为顾及他人而拖延决定；处女月亮让你在独处时对细节敏感、对生活质地挑剔，情绪波动多来自"事情没做到我想要的样子"；上升狮子则是你面对世界的第一印象——大方、有存在感、天然带点"我可以撑场"的自信气场。三者协同的关键，是让狮子的"敢"、天秤的"稳"、处女的"细"轮着来做主角，不要三个人一起吵。
+
+二、事业方向与优势
+日主丙火，紫微命宫在申宫——申属金，火克金，天生适合把"火的能量"用在"金的场域"里：内容/传播/设计/审美/文创/教育/文化 IP 都很对味。你的天赋在"把复杂事情说清楚、把粗糙事物美化一下、把队伍点燃"。八字土偏旺、木略欠——意味着执行力强、能沉得下心做长期的事，但过分求稳时会缺一点"破局的锐"。事业上多亲近木性场域（书、植物、成长型伙伴、绿色空间），会明显更顺。
+
+三、感情/关系
+天秤太阳 + 上升狮子的组合，看起来关系里是"体面派"，其实内心是处女月亮在打分。你要小心两件事：一是"表面很配合、内心已扣分"的模式；二是把自己不满憋着，等对方"应该懂"。你适合的伴侣不是最闪的那个，而是能配合你在细节里过日子、能容纳你想被夸的那个"太阳型队友"。
+
+四、要留意的坑
+1）"完美-拖延"循环：处女的高标准 + 天秤的犹豫，容易让选题、方案、感情决定，卡在"再等等"。给自己设"够用就上"的最低标准。
+2）情绪压抑：狮子上升会让你在人前不肯示弱，但情绪没有出口就会转成对自己的挑剔。定期倾诉或写日记非常关键。
+3）土旺缺木：偶尔会觉得"生活很实、但不够生长"，多接触阅读/植物/新领域，把木的生发感补回来。
+
+五、最近三年运势主线
+这几年你会明显进入"从内敛到发声"的阶段——狮子上升被激活、丙火日主进入更适合"被看到"的运。适合做的三件事：（1）沉下心磨一门"能被人记住"的手艺，一年一件成品；（2）把工作台/账号/笔记这些个人系统持续沉淀，它们会在未来两年变成你的第二职业底盘；（3）在关系里主动一点，说出自己的想法与需要，别只做那个"善解人意的人"。
+
+—— 想到什么再随时聊，这段解读只是坐标，你才是驾驶员。`;
+
+function migrateMiaoFateReading(){
+  try{
+    if(state.__fate_reading_v1) return;
+    if(state.mystic && Array.isArray(state.mystic.profiles)){
+      let hit = false;
+      state.mystic.profiles.forEach(p=>{
+        if(p && p.name && p.name.indexOf('妙妙')>=0 && (!p.note || !p.note.trim())){
+          p.note = MIAO_FATE_READING_V1;
+          hit = true;
+        }
+      });
+      state.__fate_reading_v1 = true;
+      if(hit) save(); else save();
+    }
+  }catch(e){console.warn('migrateMiaoFateReading',e);}
 }
 function save(){
   state.meta = state.meta || {};
@@ -2121,10 +2173,195 @@ const WW_SVG = {
 };
 
 let knowCtx=null;
+let curFateLens=null; // 当前选中的档案 id，用来展示"档案视角"下的个性化解读
+
+/* ===== 知识点 × 档案 的个性化解读生成器 =====
+   传入档案 auto (计算结果) 与 p (档案本体)，返回该知识点在此档案上的具体解读。
+   如果返回空字符串或 null，说明这条知识点暂无对应个性化解读。 */
+const KNOW_PERSONAL_GEN = {
+  // ——— 星座 ———
+  'k1': (a)=>a.sun?`你的三要素：太阳${a.sun}·月亮${a.moon}·上升${a.rising}。太阳${a.sun}=你想活成的样子；月亮${a.moon}=情绪需要被这样对待；上升${a.rising}=大家看到你的第一印象。三者混在一起才是完整的你，先记住这个"外内表"结构。`:'',
+  'k2': (a)=>{
+    const map = {'白羊':'火','狮子':'火','射手':'火','金牛':'土','处女':'土','摩羯':'土','双子':'风','天秤':'风','水瓶':'风','巨蟹':'水','天蝎':'水','双鱼':'水'};
+    const s=map[a.sun], m=map[a.moon], r=map[a.rising];
+    if(!s||!m||!r) return '';
+    return `你的四象组合：太阳${a.sun}(${s})·月亮${a.moon}(${m})·上升${a.rising}(${r})。${s==m&&m==r?'三要素同象，人格底色一致、执行力强，但也容易钻牛角。':`${s}+${m}+${r} 混象——外面${r}、思考${s}、内心${m}，需要不同场景切换才不会累。`}`;
+  },
+  'k2a': (a)=>{
+    const mode={'白羊':'本位','巨蟹':'本位','天秤':'本位','摩羯':'本位','金牛':'固定','狮子':'固定','天蝎':'固定','水瓶':'固定','双子':'变动','处女':'变动','射手':'变动','双鱼':'变动'};
+    return a.sun?`你的太阳${a.sun}属${mode[a.sun]||'—'}星座——${mode[a.sun]==='本位'?'天生想开创、爱起头；缺点是起头多完成少。':mode[a.sun]==='固定'?'认准就守，稳定是优势，僵化是坑。':'善调整、能应变；容易反复推翻自己。'}`:'';
+  },
+  'k2c': (a)=>{
+    const ruler={'白羊':'火星','金牛':'金星','双子':'水星','巨蟹':'月亮','狮子':'太阳','处女':'水星','天秤':'金星','天蝎':'冥王/火星','射手':'木星','摩羯':'土星','水瓶':'天王/土星','双鱼':'海王/木星'};
+    return a.sun?`你的太阳守护星是${ruler[a.sun]||'—'}——它在你星盘里的落位、相位，直接影响你的能量最容易在哪个领域"顺流"。`:'';
+  },
+  'k2d': (a)=>{
+    const need={'火':'意义感','土':'安全感','风':'新鲜感','水':'联结感'};
+    const map = {'白羊':'火','狮子':'火','射手':'火','金牛':'土','处女':'土','摩羯':'土','双子':'风','天秤':'风','水瓶':'风','巨蟹':'水','天蝎':'水','双鱼':'水'};
+    const m = map[a.moon];
+    return m?`你月亮${a.moon}(${m}象)——情感上最需要"${need[m]}"。伴侣/家人给你${need[m]}，你才会真正安心，光有物质或口头都不够。`:'';
+  },
+  // ——— 星盘 ———
+  'k3': ()=>'在专业排盘工具里查一下自己的十二宫落位，重点看：1宫（自我）· 7宫（伴侣）· 10宫（事业）· 4宫（家）——你人生的四大轴心。',
+  'k4a': ()=>'ASC 就是你的上升，MC 就是天顶。这两条轴决定"你如何进入世界"和"世界如何认识你"。工作台没算 MC，可以用测测/新月复核。',
+  // ——— 生辰 ———
+  'k5': (a,p)=>p.time?`你的出生时间：${p.time}。已足够定上升与时柱；但仍建议问一次妈妈或查户口本，把分钟精确到 5 分钟以内。`:'工作台档案里你没填出生时间——找妈妈或户口本确认一下，能立刻算出上升星座和时柱，命盘完整度会大跳一档。',
+  'k5c': (a,p)=>{
+    if(!p.date) return '';
+    const m = parseInt(p.date.slice(5,7),10);
+    if(m===1||m===2) return `你出生在 ${m} 月——立春附近，年柱容易算错。检查一下算出来的年柱${a.bazi?.year?.gan||''}${a.bazi?.year?.zhi||''}是否合理。`;
+    return `你出生在 ${m} 月，离节气交界较远，月柱${a.bazi?.month?.gan||''}${a.bazi?.month?.zhi||''}比较稳定，可以放心用。`;
+  },
+  // ——— 八字 ———
+  'k6': (a)=>a.bazi?`你的四柱：年 ${a.bazi.year.gan}${a.bazi.year.zhi} · 月 ${a.bazi.month.gan}${a.bazi.month.zhi} · 日 ${a.bazi.day.gan}${a.bazi.day.zhi}（你自己）· 时 ${a.bazi.hour.gan}${a.bazi.hour.zhi}。日主 ${a.bazi.day.gan}——把这两个字记住，八字入门就是围绕日主看喜忌。`:'',
+  'k7': (a)=>a.bazi?`看你的八字，先看${a.bazi.day.gan}(日主)的强弱：看它有没有印星生、比劫帮、财官泄。工作台没做强弱判断，可以贴给 Q 帮你定强弱。`:'',
+  'k7b': (a)=>{
+    if(!a.wuxing) return '';
+    const total = Object.values(a.wuxing).reduce((s,x)=>s+x,0)||1;
+    const arr = Object.entries(a.wuxing).map(([k,v])=>({k,v,pct:Math.round(v/total*100)}));
+    arr.sort((x,y)=>y.v-x.v);
+    const missing = arr.filter(x=>x.v===0).map(x=>x.k);
+    const strong = arr[0].v>=3?arr[0].k:null;
+    return `你的五行分布：${arr.map(x=>x.k+x.v).join(' · ')}。${strong?`${strong}偏旺，性格上易带${strong==='土'?'稳重但保守':strong==='火'?'热情但急躁':strong==='金'?'果断但硬气':strong==='水'?'灵活但飘忽':'生长但躁动'}。`:''}${missing.length?`缺 ${missing.join('/')}——不必执着补齐，看喜用神再决定。`:''}`;
+  },
+  'k7d': (a,p)=>p.date?`你的大运每 10 年一换，起大运岁数依赖你的性别（${p.gender||'—'}）和年干阴阳（${a.bazi?.year?.gan||'—'}）。可以在专业软件里排出你的十步大运，看现在这一步是在什么天干地支。`:'',
+  // ——— 紫微 ———
+  'k8': (a)=>a.ziweiPalace?`你的紫微命宫在${a.ziweiPalace}。八字告诉你"你是什么材质"，紫微告诉你"你的人生舞台长什么样"——两个工具对照看，画像会立体很多。`:'',
+  'k9a': (a)=>a.ziweiPalace?`你的命宫（${a.ziweiPalace}）是自我总纲，看整体气场。福德宫看你的精神底色和消费偏好，官禄宫看事业格局。可以用专业软件排出这三个宫的主星。`:'',
+  // ——— 五行 ———
+  'kx1': (a)=>{
+    if(!a.wuxing) return '';
+    const total = Object.values(a.wuxing).reduce((s,x)=>s+x,0)||1;
+    const top = Object.entries(a.wuxing).sort((x,y)=>y[1]-x[1])[0];
+    const attr={'木':'曲直（生长/伸展）','火':'炎上（升腾/表达）','土':'稼穑（承载/整合）','金':'从革（收敛/决断）','水':'润下（滋养/流动）'};
+    return top&&top[1]>0?`你八字里最旺的是${top[0]}——${attr[top[0]]}。这是你身体和性格上最"顺"的运动趋势，把事业和生活节奏往这方向靠，会少很多内耗。`:'';
+  },
+  'kx2': (a)=>{
+    if(!a.wuxing) return '';
+    const missing = Object.entries(a.wuxing).filter(([k,v])=>v===0).map(x=>x[0]);
+    const color = {'木':'青/绿','火':'赤/红','土':'黄/棕','金':'白/银','水':'黑/深蓝'};
+    return missing.length?`你缺 ${missing.join('/')}——可优先从最柔和的一层开始：${missing.map(k=>`${k}对应「${color[k]}」色系`).join('、')}。穿搭、家居、随身物件里加一点，都是补法。`:'五行俱全的人不多，你的分布相对均衡，随喜好选色即可。';
+  },
+  'kx3': (a)=>{
+    if(!a.wuxing) return '';
+    const arr = Object.entries(a.wuxing);
+    const min = arr.filter(([,v])=>v===0).map(x=>x[0]);
+    const organ = {'木':'肝胆-筋','火':'心-血脉','土':'脾胃-肌肉','金':'肺-皮毛','水':'肾-骨'};
+    return min.length?`你缺${min.join('/')}——中医对应 ${min.map(k=>organ[k]).join('、')} 这些系统平时要多留意，别熬夜、别过食。`:'';
+  },
+  'kx4': (a)=>{
+    if(!a.wuxing) return '';
+    const missing = Object.entries(a.wuxing).filter(([k,v])=>v===0).map(x=>x[0]);
+    const total = Object.values(a.wuxing).reduce((s,x)=>s+x,0)||1;
+    const top = Object.entries(a.wuxing).sort((x,y)=>y[1]-x[1])[0];
+    const strong = top&&top[1]/total>=0.35?top[0]:null;
+    return `${missing.length?`补${missing.join('/')}的三层次落地方案：一层-穿对色系；二层-多接触对应场域（如缺木亲近植物/书/森林）；三层-佩戴对应属性物件。`:''}${strong?`${strong}太旺时不要再补${strong}，反而要留意"泄"或"制"（${strong==='土'?'木克土、金泄土':strong==='火'?'水克火、土泄火':strong==='金'?'火克金、水泄金':strong==='水'?'土克水、木泄水':'金克木、火泄木'}）。`:''}`;
+  },
+  // ——— 命理杂谈 ———
+  'kz1': (a)=>{
+    if(!a.sun) return '';
+    return `你就是活生生的例子：太阳${a.sun}·月亮${a.moon}·上升${a.rising}·日主${a.bazi?.day?.gan||'—'}·紫微${a.ziweiPalace||'—'}——这是你的"使用说明书"。用得好，不同的选择成本会小很多。`;
+  },
+  'kz2': (a)=>a.zodiac?`你属${a.zodiac}，本命年（${a.zodiac}年）时不必焦虑，行事保守、别做大搬迁大投资大决定即可。真正影响你的是那一年的流年八字，不只是属相。`:'',
+  'kz5': ()=>'哪怕你和别人八字完全相同，你在潜山出生、你的家庭、你受的教育、你走过的路——这些都是"后天变量"。命理只给底盘概率，方向盘还在你手里。',
+};
+
+/* 生成某个知识点在某个档案下的默认解读文本（不含用户 override） */
+function genPersonalNote(kid, profile){
+  if(!profile || !profile.auto) return '';
+  const gen = KNOW_PERSONAL_GEN[kid];
+  if(!gen) return '';
+  try{ return gen(profile.auto, profile) || ''; }catch(e){ return ''; }
+}
+
+/* 取用户对某档案·某知识点的自定义 note；没有则返回自动生成 */
+function getKnowNoteFor(kid, profileId){
+  const profile = state.mystic.profiles.find(x=>x.id===profileId);
+  if(!profile) return '';
+  const overrideMap = (state.mystic.knowledgeNotes||{})[profileId] || {};
+  if(overrideMap[kid]) return overrideMap[kid];
+  return genPersonalNote(kid, profile);
+}
+
+/* 保存/清除用户对某档案·某知识点的自定义 note */
+function saveKnowNoteFor(kid, profileId, text){
+  if(!state.mystic.knowledgeNotes) state.mystic.knowledgeNotes = {};
+  if(!state.mystic.knowledgeNotes[profileId]) state.mystic.knowledgeNotes[profileId] = {};
+  if(text && text.trim()){
+    state.mystic.knowledgeNotes[profileId][kid] = text.trim();
+  }else{
+    delete state.mystic.knowledgeNotes[profileId][kid];
+  }
+  save();
+}
+
+function editKnowPersonal(kid){
+  if(!curFateLens){alert('请先选择一个命理档案作为视角');return;}
+  const profile = state.mystic.profiles.find(x=>x.id===curFateLens);
+  if(!profile) return;
+  const cur = ((state.mystic.knowledgeNotes||{})[curFateLens]||{})[kid] || genPersonalNote(kid, profile);
+  const next = prompt(`编辑「${profile.name||'档案'}」在这条知识点上的个性化解读：\n\n（留空可以恢复到系统默认；仅保存在本地）`, cur);
+  if(next===null) return;
+  saveKnowNoteFor(kid, curFateLens, next);
+  renderMysticKnowledge();
+}
+
+function renderFateLens(){
+  const bar = document.getElementById('fateLensBar');
+  if(!bar) return;
+  const profiles = (state.mystic.profiles||[]).slice().sort((a,b)=>b.ts-a.ts);
+  if(!profiles.length){
+    bar.innerHTML = `<span class="lens-label">🔭 档案视角</span><span class="lens-hint">先在「命理档案」立一个档，就能把知识点结合你的命盘来学。</span>`;
+    curFateLens = null;
+    return;
+  }
+  // 如果当前选中的档案已经被删了，回退
+  if(curFateLens && !profiles.find(p=>p.id===curFateLens)) curFateLens = null;
+  const chips = [
+    `<button class="lens-chip ${!curFateLens?'on':''}" onclick="setFateLens(null)">通用</button>`,
+    ...profiles.map(p=>`<button class="lens-chip ${curFateLens===p.id?'on':''}" onclick="setFateLens('${p.id}')">${escape(p.name||'（未命名）')}</button>`)
+  ].join('');
+  const hint = curFateLens
+    ? `<span class="lens-hint">已切到「${escape(profiles.find(p=>p.id===curFateLens).name||'档案')}」的视角，下方每条知识点都会结合你的命盘展开。</span>`
+    : `<span class="lens-hint">选一个档案，让每条知识点结合你的命盘来读。</span>`;
+  bar.innerHTML = `<span class="lens-label">🔭 档案视角</span>${chips}${hint}`;
+}
+function setFateLens(id){
+  curFateLens = id;
+  renderFateLens();
+  renderMysticKnowledge();
+}
+
 function renderMysticKnowledge(){
   const list = (state.mystic.knowledge[curMyCat]||[]);
   const box = document.getElementById('mysticKnowledgeBody');
-  box.innerHTML = list.length ? list.map(k=>`
+  box.innerHTML = list.length ? list.map(k=>{
+    let personalHTML = '';
+    if(curFateLens){
+      const profile = state.mystic.profiles.find(x=>x.id===curFateLens);
+      const overrideMap = (state.mystic.knowledgeNotes||{})[curFateLens] || {};
+      const hasOverride = !!overrideMap[k.id];
+      const noteText = hasOverride ? overrideMap[k.id] : genPersonalNote(k.id, profile);
+      const label = profile ? (profile.name||'档案') : '档案';
+      if(noteText){
+        personalHTML = `<div class="know-personal">
+          <div class="kp-head">
+            <b>🔭 ${escape(label)}·个性化解读${hasOverride?'（已编辑）':''}</b>
+            <button class="kp-edit" onclick="editKnowPersonal('${k.id}')">编辑</button>
+          </div>
+          <p>${escape(noteText)}</p>
+        </div>`;
+      }else{
+        personalHTML = `<div class="know-personal">
+          <div class="kp-head">
+            <b>🔭 ${escape(label)}·个性化解读</b>
+            <button class="kp-edit" onclick="editKnowPersonal('${k.id}')">＋ 写一条</button>
+          </div>
+          <p class="kp-empty">这条暂时还没有针对该档案的自动解读。点右上「＋ 写一条」把它和你的命盘联系起来。</p>
+        </div>`;
+      }
+    }
+    return `
     <div class="know">
       <div style="display:flex;justify-content:space-between;">
         <h4>${escape(k.title)}</h4>
@@ -2134,7 +2371,9 @@ function renderMysticKnowledge(){
         </div>
       </div>
       <p style="white-space:pre-wrap;">${escape(k.body)}</p>
-    </div>`).join('') : '<div class="empty">还没有内容，点上面「加一条」。</div>';
+      ${personalHTML}
+    </div>`;
+  }).join('') : '<div class="empty">还没有内容，点上面「加一条」。</div>';
 }
 function renderWenwan(){
   const list = (state.wenwan.knowledge[curWWCat]||[]);
@@ -2610,14 +2849,16 @@ function saveFate(){
     obj.id='p_'+Date.now();
     state.mystic.profiles.unshift(obj);
   }
-  save();closeModal('fateModal');renderFate();
+  save();closeModal('fateModal');renderFate();renderFateLens();
   if(!editingFateId) openFateDetail(obj.id||state.mystic.profiles[0].id);
 }
 function delFate(id){
   event && event.stopPropagation && event.stopPropagation();
   if(!confirm('删除这份档案？')) return;
   state.mystic.profiles = state.mystic.profiles.filter(x=>x.id!==id);
-  save();renderFate();
+  // 清理该档案关联的个性化解读
+  if(state.mystic.knowledgeNotes && state.mystic.knowledgeNotes[id]) delete state.mystic.knowledgeNotes[id];
+  save();renderFate();renderFateLens();renderMysticKnowledge();
 }
 
 function openFateDetail(id){
@@ -2968,12 +3209,13 @@ function setToday(){
 function initAll(){
   setToday();
   migrateFateAuto();
+  migrateMiaoFateReading();
   renderShelf();
   renderQuotes();
   renderIndustry();
   renderProject();
   renderMediaSources();renderIdeas();
-  renderMysticKnowledge();renderFate();
+  renderMysticKnowledge();renderFate();renderFateLens();
   renderWenwan();
   renderBackupNote();
   renderStatusBar();
