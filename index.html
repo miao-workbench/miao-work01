@@ -227,8 +227,11 @@
   .todo-text{flex:1;font-size:14px;color:var(--ink);line-height:1.5;}
   .todo-item.done .todo-text{text-decoration:line-through;color:var(--ink-3);}
   .btn-del{background:none;border:none;color:var(--ink-3);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:0;transition:opacity .15s;}
-  .todo-item:hover .btn-del{opacity:1;}
+  .btn-edit{background:none;border:none;color:var(--ink-3);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:0;transition:opacity .15s;}
+  .todo-item:hover .btn-del,.todo-item:hover .btn-edit{opacity:1;}
   .btn-del:hover{color:#C0392B;background:rgba(192,57,43,.08);}
+  .btn-edit:hover{color:var(--primary);background:rgba(139,90,43,.08);}
+  .todo-text.editing{outline:none;background:#FFF9EE;border-radius:4px;padding:2px 6px;border:1px solid var(--primary);}
   .todo-done-section{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;}
   .todo-done-section summary{font-size:13px;color:var(--ink-3);cursor:pointer;}
 
@@ -2445,13 +2448,14 @@ function renderTodos(){
         <button class="btn small" onclick="addTodo()">＋</button>
       </div>
       <div class="todo-list">
-        ${pending.map((t,i)=>`
-          <label class="todo-item" data-idx="${state.work.todos.indexOf(t)}">
-            <input type="checkbox" onchange="toggleTodo(${state.work.todos.indexOf(t)})" />
-            <span class="todo-text">${escape(t.title)}</span>
-            <button class="btn-del" onclick="event.preventDefault();delTodo(${state.work.todos.indexOf(t)})" title="删除">×</button>
+        ${pending.map((t,i)=>{const idx=state.work.todos.indexOf(t);return `
+          <label class="todo-item" data-idx="${idx}">
+            <input type="checkbox" onchange="toggleTodo(${idx})" />
+            <span class="todo-text" ondblclick="event.preventDefault();editTodo(${idx})">${escape(t.title)}</span>
+            <button class="btn-edit" onclick="event.preventDefault();editTodo(${idx})" title="编辑">✎</button>
+            <button class="btn-del" onclick="event.preventDefault();delTodo(${idx})" title="删除">×</button>
           </label>
-        `).join('')||'<div class="empty" style="padding:20px 0;">没有待办 — 清爽的一天。</div>'}
+        `;}).join('')||'<div class="empty" style="padding:20px 0;">没有待办 — 清爽的一天。</div>'}
       </div>
       ${done.length ? `
         <details class="todo-done-section">
@@ -2488,6 +2492,34 @@ function toggleTodo(i){
 function delTodo(i){
   ensureTodos();
   state.work.todos.splice(i,1); save(); renderTodos();
+}
+function editTodo(i){
+  ensureTodos();
+  const t = state.work.todos[i]; if(!t) return;
+  const el = document.querySelector(`.todo-item[data-idx="${i}"] .todo-text`);
+  if(!el) return;
+  const old = t.title;
+  el.contentEditable = 'true';
+  el.classList.add('editing');
+  el.focus();
+  // 选中全部文字
+  const range = document.createRange(); range.selectNodeContents(el);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  const finish = (save_)=>{
+    el.contentEditable = 'false';
+    el.classList.remove('editing');
+    const newVal = (el.textContent||'').trim();
+    if(save_ && newVal && newVal !== old){
+      t.title = newVal; save(); renderTodos();
+    } else {
+      el.textContent = old;
+    }
+  };
+  el.onkeydown = (e)=>{
+    if(e.key==='Enter'){ e.preventDefault(); finish(true); }
+    if(e.key==='Escape'){ e.preventDefault(); finish(false); }
+  };
+  el.onblur = ()=> finish(true);
 }
 function clearDoneTodos(){
   if(!confirm('清空所有已完成的待办？')) return;
