@@ -194,6 +194,22 @@
   .trend-src .t-name{font-size:15px;color:var(--ink);margin-bottom:2px;}
   .trend-src .t-desc{font-size:12px;color:var(--ink-3);}
 
+  /* v1.8 · 工作方法论卡片 */
+  .insight-card,.pb-card,.retro-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;transition:box-shadow .2s;}
+  .insight-card:hover,.pb-card:hover,.retro-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.05);}
+  .ic-head,.pb-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+  .ic-title,.pb-title{font-family:var(--serif);font-size:15px;color:var(--ink);font-weight:600;flex:1;}
+  .ic-actions{display:flex;gap:4px;flex-shrink:0;}
+  .ic-tags{margin-bottom:8px;}
+  .ic-body{font-size:13px;color:var(--ink-2);line-height:1.75;white-space:pre-wrap;}
+  .ic-foot{font-size:11px;color:var(--ink-3);margin-top:8px;text-align:right;}
+  .pb-scene{font-size:13px;color:var(--ink-2);margin-bottom:8px;padding:8px 10px;background:#FAF7F0;border-radius:6px;}
+  .pb-block{font-size:13px;color:var(--ink-2);line-height:1.7;margin-bottom:8px;}
+  .pb-block b{color:var(--ink);}
+  .pb-block ol,.pb-block ul{margin:4px 0 4px 20px;padding:0;}
+  .pb-block li{margin-bottom:4px;}
+  .pb-tpl{background:#F7F5EE;border:1px dashed var(--line);border-radius:6px;padding:8px 10px;font-family:var(--serif);white-space:pre-wrap;margin-top:4px;}
+
   /* Knowledge block */
   .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
   .know h4{margin:0 0 6px 0;font-family:var(--serif);font-size:16px;color:var(--ink);}
@@ -493,20 +509,12 @@
     </div>
 
     <div data-work-pane="industry">
-      <div class="subtabs" id="industrySubtabs">
-        <button data-ind="玩具" class="active">🧸 玩具</button>
-        <button data-ind="宠物">🐾 宠物</button>
-        <button data-ind="个护家清">🧴 个护家清</button>
-        <button data-ind="美妆">💄 美妆</button>
-      </div>
+      <div class="subtabs" id="industrySubtabs"></div>
       <div id="industryBody"></div>
     </div>
 
     <div data-work-pane="project" class="hidden">
-      <div class="subtabs" id="projectSubtabs">
-        <button data-pj="正版IP" class="active">正版IP</button>
-        <button data-pj="联营计划">联营计划</button>
-      </div>
+      <div class="subtabs" id="projectSubtabs"></div>
       <div id="projectBody"></div>
     </div>
   </section>
@@ -710,23 +718,48 @@
   </div>
 </div>
 
-<div class="modal-mask" id="fileModal">
+<div class="modal-mask" id="insightModal">
   <div class="modal">
-    <h3 id="fmTitle">添加一个文件</h3>
-    <div class="desc">这里只登记「文件条目」（名字+位置+说明），点击可以直接打开。<br>可以填本地路径（<code>file:///Users/...</code>）或者云端链接。</div>
-    <div class="field"><label>文件名 / 标题</label><input id="fName" placeholder="例：2026Q2 玩具行业月报.pdf" /></div>
-    <div class="field"><label>类型</label>
-      <select id="fType">
-        <option>行研报告</option><option>行业资讯</option><option>竞品分析</option>
-        <option>会议记录</option><option>合同/协议</option><option>项目文档</option>
-        <option>数据/表格</option><option>灵感/杂记</option><option>其他</option>
-      </select>
-    </div>
-    <div class="field"><label>链接（可选）</label><input id="fLink" placeholder="file:///Users/... 或 https://..." /></div>
-    <div class="field"><label>备注</label><textarea id="fNote" placeholder="核心结论 / 存放位置 / 使用方式"></textarea></div>
+    <h3 id="imTitle">新加一条行业认知</h3>
+    <div class="desc">沉淀你对这个行业的判断：<b>信号</b>（怎么算好/差）· <b>黑话</b>（业内术语）· <b>趋势</b>（往哪走）· <b>警戒线</b>（别踩的坑）。写自己的话，不用 wiki。</div>
+    <div class="field"><label>标题</label><input id="iName" placeholder="例：选品信号——爆款前 30 天必看的 3 个数据" /></div>
+    <div class="field"><label>标签（空格分隔）</label><input id="iTags" placeholder="例：信号 选品 数据" /></div>
+    <div class="field"><label>正文</label><textarea id="iBody" rows="6" placeholder="想到就写，一条一条：\n· ...\n· ..."></textarea></div>
     <div class="modal-actions">
-      <button class="btn ghost" onclick="fileCtx=null;closeModal('fileModal')">取消</button>
-      <button class="btn" onclick="saveFile()">保存</button>
+      <button class="btn ghost" onclick="insightCtx=null;closeModal('insightModal')">取消</button>
+      <button class="btn" onclick="saveInsight()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="playbookModal">
+  <div class="modal">
+    <h3 id="pbmTitle">新加一条 Playbook</h3>
+    <div class="desc">一件反复做的事 → 一张可执行卡。目标是"下次不用再从零想"。</div>
+    <div class="field"><label>标题</label><input id="pbName" placeholder="例：新 IP 合作评估 5 步法" /></div>
+    <div class="field"><label>适用场景</label><input id="pbScene" placeholder="例：收到 IP 方 BD 邀约、需要快速判断要不要接" /></div>
+    <div class="field"><label>步骤（一行一步）</label><textarea id="pbSteps" rows="5" placeholder="例：\n1. 查 IP 现有电商销量和价格带\n2. 看粉丝画像是否与我们客群重合\n3. 谈保底 vs 分成 vs 授权金结构\n..."></textarea></div>
+    <div class="field"><label>常见坑（一行一条）</label><textarea id="pbTraps" rows="4" placeholder="例：\n· IP 方要保底但不给独家\n· 授权范围写得太窄"></textarea></div>
+    <div class="field"><label>模板 / 话术（可选）</label><textarea id="pbTpl" rows="4" placeholder="邮件开场话术、议价参考区间、汇报口径……"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="pbCtx=null;closeModal('playbookModal')">取消</button>
+      <button class="btn" onclick="savePlaybook()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="retroModal">
+  <div class="modal">
+    <h3 id="rmTitle">新加一次复盘</h3>
+    <div class="desc">具体一件事 · 结果 · 3 条 next time。攒到一定程度就能提炼成 Playbook。</div>
+    <div class="field"><label>标题</label><input id="rName" placeholder="例：X 品牌联营招商 6 月复盘" /></div>
+    <div class="field"><label>日期</label><input id="rDate" type="date" /></div>
+    <div class="field"><label>做了什么</label><textarea id="rDid" rows="4" placeholder="做了哪些具体动作，越具体越好"></textarea></div>
+    <div class="field"><label>结果</label><textarea id="rResult" rows="3" placeholder="数据 / 结论 / 客户反馈"></textarea></div>
+    <div class="field"><label>下次可以更好（一行一条，最多 3 条）</label><textarea id="rNext" rows="4" placeholder="例：\n1. 招商邮件里放"3 张一图看懂"截图\n2. ..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="retroCtx=null;closeModal('retroModal')">取消</button>
+      <button class="btn" onclick="saveRetro()">保存</button>
     </div>
   </div>
 </div>
@@ -912,25 +945,25 @@ const seed = {
           {name:'玩具产业新观察',url:'https://www.baidu.com/s?wd=%E7%8E%A9%E5%85%B7%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:'百度搜"玩具行业报告 2026"'},
           {name:'中国玩具和婴童用品协会',url:'https://www.tjpaa.org/',note:'官方协会站'},
           {name:'亿邦动力·玩具',url:'https://www.ebrun.com/toy/',note:'电商视角行业新闻'},
-        ],files:[]},
+        ],insights:[]},
       '宠物':{sources:[
           {name:'宠物行业白皮书检索',url:'https://www.baidu.com/s?wd=%E4%B8%AD%E5%9B%BD%E5%AE%A0%E7%89%A9%E8%A1%8C%E4%B8%9A%E7%99%BD%E7%9A%AE%E4%B9%A6',note:'年度白皮书'},
           {name:'派读宠物行业大数据',url:'https://www.petdata.cn/',note:'国内领先宠物行业数据平台'},
           {name:'亿邦动力·宠物',url:'https://www.ebrun.com/pet/',note:''},
-        ],files:[]},
+        ],insights:[]},
       '个护家清':{sources:[
           {name:'CBNData 家清个护',url:'https://www.cbndata.com/',note:'第一财经商业数据中心'},
           {name:'个护家清行业检索',url:'https://www.baidu.com/s?wd=%E4%B8%AA%E6%8A%A4%E5%AE%B6%E6%B8%85%E8%A1%8C%E4%B8%9A%E6%8A%A5%E5%91%8A+2026',note:''},
-        ],files:[]},
+        ],insights:[]},
       '美妆':{sources:[
           {name:'聚美丽',url:'https://www.jumeili.cn/',note:'化妆品行业头部媒体'},
           {name:'青眼',url:'https://www.qingyanwang.com.cn/',note:'美妆产业媒体'},
           {name:'亿邦动力·美妆',url:'https://www.ebrun.com/beauty/',note:''},
-        ],files:[]},
+        ],insights:[]},
     },
     project:{
-      '正版IP':{files:[],desc:'IP 授权 · 联名 · 版权合作。文件条目记在这里方便一览。'},
-      '联营计划':{files:[],desc:'联营招商 · 服务商 · 品牌孵化项目。'},
+      '正版IP':{desc:'IP 授权 · 联名 · 版权合作。',playbooks:[],retros:[]},
+      '联营计划':{desc:'联营招商 · 服务商 · 品牌孵化项目。',playbooks:[],retros:[]},
     }
   },
   media:{
@@ -1323,6 +1356,35 @@ const BOOK_CORE_VIEWS = {
   b51:{cat:'思想·工具',view:'[要点]· 一切从实际出发：先看清楚是什么，别急着说该怎样\n· 抓主要矛盾：任何复杂局面都有一个"牵一发动全身"的点\n· 调查研究：没有调查就没有发言权——对生活、工作、感情都成立\n· 持久战思维：短期看不到成果的事，用"阶段论"给自己坚持的理由'},
 };
 const BOOK_CV_VER = 'v1.7-batch';
+const WORK_MODEL_VER = 'v1.8-methodology';
+// v1.8：工作模块从「文件柜」升级为「方法论沉淀」；老 files 保留在 __legacy_files_backup 里，防止误删
+function migrateWorkModel(){
+  try{
+    if(state.__work_model_ver === WORK_MODEL_VER) return;
+    state.work = state.work || {industry:{},project:{}};
+    state.__legacy_files_backup = state.__legacy_files_backup || {industry:{},project:{}};
+    Object.keys(state.work.industry||{}).forEach(k=>{
+      const it = state.work.industry[k]; if(!it) return;
+      if(!Array.isArray(it.sources)) it.sources = [];
+      if(!Array.isArray(it.insights)) it.insights = [];
+      if(Array.isArray(it.files) && it.files.length){
+        state.__legacy_files_backup.industry[k] = it.files;
+      }
+      delete it.files;
+    });
+    Object.keys(state.work.project||{}).forEach(k=>{
+      const p = state.work.project[k]; if(!p) return;
+      if(!Array.isArray(p.playbooks)) p.playbooks = [];
+      if(!Array.isArray(p.retros)) p.retros = [];
+      if(Array.isArray(p.files) && p.files.length){
+        state.__legacy_files_backup.project[k] = p.files;
+      }
+      delete p.files;
+    });
+    state.__work_model_ver = WORK_MODEL_VER;
+    save();
+  }catch(e){console.warn('migrateWorkModel',e);}
+}
 const BOOK_INJECT_VER = 'v1.7.1-inject-b51';
 // 注入：新加进 seed 的书，让老用户也能看到
 function injectMissingSeedBooks(){
@@ -1404,22 +1466,8 @@ document.querySelectorAll('#workSubtabs button').forEach(b=>{
   });
 });
 
-/* Industry / Project sub */
+/* Industry / Project sub — 由 renderIndustrySubtabs / renderProjectSubtabs 动态绑定 */
 let curInd='玩具',curPj='正版IP';
-document.querySelectorAll('#industrySubtabs button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    curInd=b.dataset.ind;
-    document.querySelectorAll('#industrySubtabs button').forEach(x=>x.classList.toggle('active',x===b));
-    renderIndustry();
-  });
-});
-document.querySelectorAll('#projectSubtabs button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    curPj=b.dataset.pj;
-    document.querySelectorAll('#projectSubtabs button').forEach(x=>x.classList.toggle('active',x===b));
-    renderProject();
-  });
-});
 
 document.querySelectorAll('#mysticSubtabs button').forEach(b=>{
   b.addEventListener('click',()=>{
@@ -1890,14 +1938,111 @@ function delQuoteFromBook(qid, bookId){
 }
 
 /* ========================================================================
-   工作 · 行业
+   工作 · 行业（认知卡片 + 来源）· 项目（Playbook + 复盘）
    ======================================================================== */
-let fileCtx=null;  // {kind:'industry'|'project',key:'玩具'|'正版IP'} 打开文件 modal 时记录
+function uid(prefix){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function nl2br(s){ return escape(s||'').replace(/\n/g,'<br/>'); }
+function splitLines(s){ return (s||'').split(/\n+/).map(x=>x.trim()).filter(Boolean); }
+
+function renderIndustrySubtabs(){
+  const wrap = document.getElementById('industrySubtabs');
+  if(!wrap) return;
+  const keys = Object.keys(state.work.industry||{});
+  if(!keys.includes(curInd)) curInd = keys[0]||'';
+  wrap.innerHTML = keys.map(k=>`<button data-ind="${escape(k)}" class="${k===curInd?'active':''}">${escape(k)}</button>`).join('')
+    + `<button class="ghost" onclick="addIndustry()" title="新增行业">＋</button>`;
+  wrap.querySelectorAll('button[data-ind]').forEach(b=>{
+    b.addEventListener('click',()=>{ curInd = b.dataset.ind; renderIndustrySubtabs(); renderIndustry(); });
+  });
+}
+function renderProjectSubtabs(){
+  const wrap = document.getElementById('projectSubtabs');
+  if(!wrap) return;
+  const keys = Object.keys(state.work.project||{});
+  if(!keys.includes(curPj)) curPj = keys[0]||'';
+  wrap.innerHTML = keys.map(k=>`<button data-pj="${escape(k)}" class="${k===curPj?'active':''}">${escape(k)}</button>`).join('')
+    + `<button class="ghost" onclick="addProject()" title="新增项目">＋</button>`;
+  wrap.querySelectorAll('button[data-pj]').forEach(b=>{
+    b.addEventListener('click',()=>{ curPj = b.dataset.pj; renderProjectSubtabs(); renderProject(); });
+  });
+}
+function addIndustry(){
+  const name = (prompt('新增行业分类（例：食品保健、鞋服箱包）：')||'').trim();
+  if(!name) return;
+  if(state.work.industry[name]){ alert('已存在同名分类'); return; }
+  state.work.industry[name] = {sources:[],insights:[]};
+  curInd = name; save(); renderIndustrySubtabs(); renderIndustry();
+}
+function addProject(){
+  const name = (prompt('新增项目（例：视频号内容、品牌孵化 X）：')||'').trim();
+  if(!name) return;
+  if(state.work.project[name]){ alert('已存在同名项目'); return; }
+  state.work.project[name] = {desc:'',playbooks:[],retros:[]};
+  curPj = name; save(); renderProjectSubtabs(); renderProject();
+}
+function renameIndustry(oldName){
+  const name = (prompt('重命名为：',oldName)||'').trim();
+  if(!name || name===oldName) return;
+  if(state.work.industry[name]){ alert('已存在同名分类'); return; }
+  state.work.industry[name] = state.work.industry[oldName];
+  delete state.work.industry[oldName];
+  if(curInd===oldName) curInd = name;
+  save(); renderIndustrySubtabs(); renderIndustry();
+}
+function delIndustry(name){
+  if(!confirm(`删除行业「${name}」？其下所有认知卡和来源会一起删除（无法恢复）。`)) return;
+  delete state.work.industry[name];
+  save(); renderIndustrySubtabs(); renderIndustry();
+}
+function renameProject(oldName){
+  const name = (prompt('重命名为：',oldName)||'').trim();
+  if(!name || name===oldName) return;
+  if(state.work.project[name]){ alert('已存在同名项目'); return; }
+  state.work.project[name] = state.work.project[oldName];
+  delete state.work.project[oldName];
+  if(curPj===oldName) curPj = name;
+  save(); renderProjectSubtabs(); renderProject();
+}
+function delProject(name){
+  if(!confirm(`删除项目「${name}」？其下所有 Playbook 和复盘会一起删除（无法恢复）。`)) return;
+  delete state.work.project[name];
+  save(); renderProjectSubtabs(); renderProject();
+}
+
 function renderIndustry(){
   const d = state.work.industry[curInd];
   const box = document.getElementById('industryBody');
+  if(!d){ box.innerHTML = '<div class="empty">还没有行业分类，点上面的「＋」加一个。</div>'; return; }
+  const insightsHtml = (d.insights||[]).map((it,i)=>`
+    <div class="insight-card">
+      <div class="ic-head">
+        <div class="ic-title">${escape(it.title||'（未命名）')}</div>
+        <div class="ic-actions">
+          <button class="btn small ghost" onclick="editInsight('${curInd}',${i})">编辑</button>
+          <button class="btn small danger" onclick="delInsight('${curInd}',${i})">删</button>
+        </div>
+      </div>
+      ${(it.tags&&it.tags.length)?`<div class="ic-tags">${it.tags.map(t=>`<span class="pill">${escape(t)}</span>`).join('')}</div>`:''}
+      <div class="ic-body">${nl2br(it.body)}</div>
+      <div class="ic-foot">${it.updated?`更新于 ${new Date(it.updated).toLocaleDateString()}`:''}</div>
+    </div>
+  `).join('') || '<div class="empty">这个行业你还没沉淀认知，点右上「＋ 加认知卡」记第一条：一个信号 / 一句黑话 / 一条判断都行。</div>';
   box.innerHTML = `
     <div class="row">
+      <div class="col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3>${escape(curInd)} · 行业认知卡</h3>
+            <div style="display:flex;gap:6px;">
+              <button class="btn small" onclick="addInsight('${curInd}')">＋ 加认知卡</button>
+              <button class="btn small ghost" onclick="renameIndustry('${curInd}')">重命名</button>
+              <button class="btn small danger ghost" onclick="delIndustry('${curInd}')">删除行业</button>
+            </div>
+          </div>
+          <div class="desc">沉淀你对这个行业的判断：<b>信号</b>（怎么算好/差）· <b>黑话</b>（业内术语）· <b>趋势</b>（往哪走）· <b>警戒线</b>（哪些坑别踩）。不用长，一条一条积累。</div>
+          <div>${insightsHtml}</div>
+        </div>
+      </div>
       <div class="col">
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1920,94 +2065,207 @@ function renderIndustry(){
           `).join('')||'<div class="empty">还没有来源，点「加来源」自己配置。</div>'}</div>
         </div>
       </div>
-      <div class="col">
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h3>${curInd} · 文件柜</h3>
-            <button class="btn small" onclick="openFileModal('industry','${curInd}')">＋ 加文件</button>
-          </div>
-          <div class="desc">存链接和条目，不上传文件本体。适合放报告、飞书文档、钉钉文件等。</div>
-          <div>${(d.files||[]).map((f,i)=>renderFile(f,i,'industry',curInd)).join('')||'<div class="empty">还没有文件。</div>'}</div>
-        </div>
-      </div>
     </div>
   `;
 }
 function renderProject(){
   const d = state.work.project[curPj];
   const box = document.getElementById('projectBody');
+  if(!d){ box.innerHTML = '<div class="empty">还没有项目，点上面的「＋」加一个。</div>'; return; }
+  const pbHtml = (d.playbooks||[]).map((p,i)=>`
+    <div class="pb-card">
+      <div class="pb-head">
+        <div class="pb-title">${escape(p.title||'（未命名 Playbook）')}</div>
+        <div class="ic-actions">
+          <button class="btn small ghost" onclick="editPlaybook('${curPj}',${i})">编辑</button>
+          <button class="btn small danger" onclick="delPlaybook('${curPj}',${i})">删</button>
+        </div>
+      </div>
+      ${p.scene?`<div class="pb-scene"><b>适用场景：</b>${escape(p.scene)}</div>`:''}
+      ${(p.steps&&p.steps.length)?`<div class="pb-block"><b>步骤：</b><ol>${p.steps.map(s=>`<li>${escape(s)}</li>`).join('')}</ol></div>`:''}
+      ${(p.traps&&p.traps.length)?`<div class="pb-block"><b>常见坑：</b><ul>${p.traps.map(s=>`<li>${escape(s)}</li>`).join('')}</ul></div>`:''}
+      ${p.templates?`<div class="pb-block"><b>模板/话术：</b><div class="pb-tpl">${nl2br(p.templates)}</div></div>`:''}
+      <div class="ic-foot">${p.updated?`更新于 ${new Date(p.updated).toLocaleDateString()}`:''}</div>
+    </div>
+  `).join('') || '<div class="empty">还没有 Playbook。第一张可以从"我这周做过的一件事，下次别人做也能按这个套路"开始。</div>';
+  const retroHtml = (d.retros||[]).map((r,i)=>`
+    <div class="retro-card">
+      <div class="pb-head">
+        <div class="pb-title">${escape(r.title||'（未命名复盘）')} <span class="pill">${escape(r.date||'')}</span></div>
+        <div class="ic-actions">
+          <button class="btn small ghost" onclick="editRetro('${curPj}',${i})">编辑</button>
+          <button class="btn small danger" onclick="delRetro('${curPj}',${i})">删</button>
+        </div>
+      </div>
+      ${r.did?`<div class="pb-block"><b>做了什么：</b>${nl2br(r.did)}</div>`:''}
+      ${r.result?`<div class="pb-block"><b>结果：</b>${nl2br(r.result)}</div>`:''}
+      ${(r.nextTime&&r.nextTime.length)?`<div class="pb-block"><b>下次可以更好：</b><ol>${r.nextTime.map(s=>`<li>${escape(s)}</li>`).join('')}</ol></div>`:''}
+    </div>
+  `).join('') || '<div class="empty">还没有复盘。做完一件事就记一条：做了什么 · 结果 · 3 条 next time。</div>';
   box.innerHTML = `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3>${curPj}</h3>
-        <button class="btn small" onclick="openFileModal('project','${curPj}')">＋ 加文件</button>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <h3>${escape(curPj)}</h3>
+        <div style="display:flex;gap:6px;">
+          <button class="btn small ghost" onclick="renameProject('${curPj}')">重命名</button>
+          <button class="btn small danger ghost" onclick="delProject('${curPj}')">删除项目</button>
+        </div>
       </div>
       <div class="desc">${escape(d.desc||'')}</div>
-      <div>${(d.files||[]).map((f,i)=>renderFile(f,i,'project',curPj)).join('')||'<div class="empty">还没有文件，点「加文件」记第一条。</div>'}</div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>Playbook · 可复用套路</h3>
+            <button class="btn small" onclick="addPlaybook('${curPj}')">＋ 加 Playbook</button>
+          </div>
+          <div class="desc">一件反复做的事 → 一张可执行卡：适用场景 · 步骤 · 常见坑 · 模板/话术。目标是"下次不用再从零想"。</div>
+          <div>${pbHtml}</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>复盘 · 一次一次沉淀</h3>
+            <button class="btn small" onclick="addRetro('${curPj}')">＋ 加复盘</button>
+          </div>
+          <div class="desc">具体项目/事件的复盘：做了什么 · 结果 · 3 条 next time。攒多了就能回头提炼成新的 Playbook。</div>
+          <div>${retroHtml}</div>
+        </div>
+      </div>
     </div>
   `;
 }
-function renderFile(f,i,kind,key){
-  const link = f.link ? `<a href="${f.link}" target="_blank" rel="noopener">打开</a>` : '';
-  return `
-    <div class="file-item">
-      <div class="fi-main">
-        <div class="fi-name">${escape(f.name)}</div>
-        <div class="fi-tag"><span class="pill">${escape(f.type)}</span>${f.note?escape(f.note):''}</div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        ${link}
-        <button class="btn small ghost" onclick="editFile('${kind}','${key}',${i})">编辑</button>
-        <button class="btn small danger" onclick="delFile('${kind}','${key}',${i})">删</button>
-      </div>
-    </div>`;
+
+/* ---- 认知卡 CRUD ---- */
+let insightCtx=null; // {key,editIndex}
+function addInsight(key){
+  insightCtx={key,editIndex:null};
+  document.getElementById('imTitle').innerText = `新加一条 ${key} 认知`;
+  ['iName','iTags','iBody'].forEach(id=>document.getElementById(id).value='');
+  openModal('insightModal');
 }
-function openFileModal(kind,key){
-  fileCtx={kind,key,editIndex:null};
-  document.getElementById('fmTitle') && (document.getElementById('fmTitle').innerText='加一个文件条目');
-  ['fName','fLink','fNote'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fType').value='行研报告';
-  openModal('fileModal');
+function editInsight(key,i){
+  const it = state.work.industry[key].insights[i]; if(!it) return;
+  insightCtx={key,editIndex:i};
+  document.getElementById('imTitle').innerText = `编辑 ${key} 认知`;
+  document.getElementById('iName').value = it.title||'';
+  document.getElementById('iTags').value = (it.tags||[]).join(' ');
+  document.getElementById('iBody').value = it.body||'';
+  openModal('insightModal');
 }
-function editFile(kind,key,i){
-  const arr = kind==='industry' ? state.work.industry[key].files : state.work.project[key].files;
-  const f = arr[i]; if(!f) return;
-  fileCtx = {kind, key, editIndex:i};
-  document.getElementById('fmTitle') && (document.getElementById('fmTitle').innerText='编辑文件条目');
-  document.getElementById('fName').value = f.name||'';
-  document.getElementById('fType').value = f.type||'行研报告';
-  document.getElementById('fLink').value = f.link||'';
-  document.getElementById('fNote').value = f.note||'';
-  openModal('fileModal');
-}
-function saveFile(){
-  const name = document.getElementById('fName').value.trim();
-  if(!name){alert('文件名不能空');return;}
-  const obj={
-    name, type:document.getElementById('fType').value,
-    link:document.getElementById('fLink').value.trim(),
-    note:document.getElementById('fNote').value.trim(), ts:Date.now(),
-  };
-  const arr = fileCtx.kind==='industry'
-    ? state.work.industry[fileCtx.key].files
-    : state.work.project[fileCtx.key].files;
-  if(fileCtx.editIndex!=null && arr[fileCtx.editIndex]){
-    arr[fileCtx.editIndex] = {...arr[fileCtx.editIndex], ...obj};
+function saveInsight(){
+  if(!insightCtx) return;
+  const title = document.getElementById('iName').value.trim();
+  if(!title){ alert('标题不能空'); return; }
+  const tags = document.getElementById('iTags').value.trim().split(/\s+/).filter(Boolean);
+  const body = document.getElementById('iBody').value.trim();
+  const arr = state.work.industry[insightCtx.key].insights;
+  const now = Date.now();
+  if(insightCtx.editIndex!=null && arr[insightCtx.editIndex]){
+    arr[insightCtx.editIndex] = {...arr[insightCtx.editIndex], title, tags, body, updated:now};
   }else{
-    arr.unshift(obj);
+    arr.unshift({id:uid('ins'),title,tags,body,ts:now,updated:now});
   }
-  save();closeModal('fileModal');
-  const wasKind = fileCtx.kind;
-  fileCtx = null;
-  wasKind==='industry'?renderIndustry():renderProject();
+  save(); closeModal('insightModal'); insightCtx=null; renderIndustry();
 }
-function delFile(kind,key,i){
-  if(!confirm('删除这个文件条目？')) return;
-  const arr = kind==='industry'? state.work.industry[key].files : state.work.project[key].files;
-  arr.splice(i,1);save();
-  kind==='industry'?renderIndustry():renderProject();
+function delInsight(key,i){
+  if(!confirm('删除这条认知卡？')) return;
+  state.work.industry[key].insights.splice(i,1); save(); renderIndustry();
 }
-let sourceCtx=null; // {key, editIndex}
+
+/* ---- Playbook CRUD ---- */
+let pbCtx=null;
+function addPlaybook(key){
+  pbCtx={key,editIndex:null};
+  document.getElementById('pbmTitle').innerText = `新加一条 ${key} Playbook`;
+  ['pbName','pbScene','pbSteps','pbTraps','pbTpl'].forEach(id=>document.getElementById(id).value='');
+  openModal('playbookModal');
+}
+function editPlaybook(key,i){
+  const p = state.work.project[key].playbooks[i]; if(!p) return;
+  pbCtx={key,editIndex:i};
+  document.getElementById('pbmTitle').innerText = `编辑 ${key} Playbook`;
+  document.getElementById('pbName').value = p.title||'';
+  document.getElementById('pbScene').value = p.scene||'';
+  document.getElementById('pbSteps').value = (p.steps||[]).join('\n');
+  document.getElementById('pbTraps').value = (p.traps||[]).join('\n');
+  document.getElementById('pbTpl').value = p.templates||'';
+  openModal('playbookModal');
+}
+function savePlaybook(){
+  if(!pbCtx) return;
+  const title = document.getElementById('pbName').value.trim();
+  if(!title){ alert('标题不能空'); return; }
+  const obj = {
+    title,
+    scene: document.getElementById('pbScene').value.trim(),
+    steps: splitLines(document.getElementById('pbSteps').value),
+    traps: splitLines(document.getElementById('pbTraps').value),
+    templates: document.getElementById('pbTpl').value.trim(),
+    updated: Date.now(),
+  };
+  const arr = state.work.project[pbCtx.key].playbooks;
+  if(pbCtx.editIndex!=null && arr[pbCtx.editIndex]){
+    arr[pbCtx.editIndex] = {...arr[pbCtx.editIndex], ...obj};
+  }else{
+    arr.unshift({id:uid('pb'),ts:Date.now(),...obj});
+  }
+  save(); closeModal('playbookModal'); pbCtx=null; renderProject();
+}
+function delPlaybook(key,i){
+  if(!confirm('删除这条 Playbook？')) return;
+  state.work.project[key].playbooks.splice(i,1); save(); renderProject();
+}
+
+/* ---- Retro CRUD ---- */
+let retroCtx=null;
+function addRetro(key){
+  retroCtx={key,editIndex:null};
+  document.getElementById('rmTitle').innerText = `新加一次 ${key} 复盘`;
+  document.getElementById('rName').value='';
+  document.getElementById('rDate').value = new Date().toISOString().slice(0,10);
+  ['rDid','rResult','rNext'].forEach(id=>document.getElementById(id).value='');
+  openModal('retroModal');
+}
+function editRetro(key,i){
+  const r = state.work.project[key].retros[i]; if(!r) return;
+  retroCtx={key,editIndex:i};
+  document.getElementById('rmTitle').innerText = `编辑 ${key} 复盘`;
+  document.getElementById('rName').value = r.title||'';
+  document.getElementById('rDate').value = r.date||'';
+  document.getElementById('rDid').value  = r.did||'';
+  document.getElementById('rResult').value = r.result||'';
+  document.getElementById('rNext').value = (r.nextTime||[]).join('\n');
+  openModal('retroModal');
+}
+function saveRetro(){
+  if(!retroCtx) return;
+  const title = document.getElementById('rName').value.trim();
+  if(!title){ alert('标题不能空'); return; }
+  const obj = {
+    title,
+    date: document.getElementById('rDate').value.trim(),
+    did: document.getElementById('rDid').value.trim(),
+    result: document.getElementById('rResult').value.trim(),
+    nextTime: splitLines(document.getElementById('rNext').value),
+  };
+  const arr = state.work.project[retroCtx.key].retros;
+  if(retroCtx.editIndex!=null && arr[retroCtx.editIndex]){
+    arr[retroCtx.editIndex] = {...arr[retroCtx.editIndex], ...obj};
+  }else{
+    arr.unshift({id:uid('rt'),ts:Date.now(),...obj});
+  }
+  save(); closeModal('retroModal'); retroCtx=null; renderProject();
+}
+function delRetro(key,i){
+  if(!confirm('删除这次复盘？')) return;
+  state.work.project[key].retros.splice(i,1); save(); renderProject();
+}
+
+/* ---- 来源 CRUD（保留） ---- */
+let sourceCtx=null;
 function addSource(kind,key){
   sourceCtx = {key, editIndex:null};
   document.getElementById('smTitle').innerText = `添加一个 ${key} 资讯来源`;
@@ -3513,8 +3771,11 @@ function initAll(){
   migrateMiaoFateReading();
   migrateBookCoreView();
   injectMissingSeedBooks();
+  migrateWorkModel();
   renderShelf();
   renderQuotes();
+  renderIndustrySubtabs();
+  renderProjectSubtabs();
   renderIndustry();
   renderProject();
   renderMediaSources();renderIdeas();
@@ -3547,30 +3808,36 @@ function cmdkBuildIndex(){
       go:()=>{switchPane('reading');document.querySelector('#readingSubtabs button[data-rd-tab="quotes"]').click();}
     });
   });
-  // 工作 · 行业来源
+  // 工作 · 行业来源 + 认知卡
   const industry = (state.work&&state.work.industry)||{};
   Object.entries(industry).forEach(([cat,d])=>{
     (d.sources||[]).forEach(s=>idx.push({
       kind:'工作·'+cat+'·来源', label:s.name, sub:(s.note||s.url||'').slice(0,60),
       hay:[s.name,s.url,s.note,cat].filter(Boolean).join(' '),
       go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="industry"]')?.click();
-              const btn=document.querySelector(`#industrySubtabs button[data-ind="${cat}"]`);btn&&btn.click();}
+              curInd=cat; renderIndustrySubtabs(); renderIndustry();}
     }));
-    (d.files||[]).forEach(f=>idx.push({
-      kind:'工作·'+cat+'·文件', label:f.name, sub:[f.type,f.note].filter(Boolean).join(' · '),
-      hay:[f.name,f.type,f.note,f.link,cat].filter(Boolean).join(' '),
+    (d.insights||[]).forEach(it=>idx.push({
+      kind:'工作·'+cat+'·认知', label:it.title||'(无题)', sub:(it.body||'').slice(0,80),
+      hay:[it.title,it.body,(it.tags||[]).join(' '),cat].filter(Boolean).join(' '),
       go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="industry"]')?.click();
-              const btn=document.querySelector(`#industrySubtabs button[data-ind="${cat}"]`);btn&&btn.click();}
+              curInd=cat; renderIndustrySubtabs(); renderIndustry();}
     }));
   });
-  // 工作 · 项目文件
+  // 工作 · 项目 Playbook + 复盘
   const project = (state.work&&state.work.project)||{};
   Object.entries(project).forEach(([cat,d])=>{
-    (d.files||[]).forEach(f=>idx.push({
-      kind:'项目·'+cat, label:f.name, sub:[f.type,f.note].filter(Boolean).join(' · '),
-      hay:[f.name,f.type,f.note,f.link,cat,d.desc].filter(Boolean).join(' '),
+    (d.playbooks||[]).forEach(p=>idx.push({
+      kind:'项目·'+cat+'·Playbook', label:p.title||'(无题)', sub:(p.scene||'').slice(0,80),
+      hay:[p.title,p.scene,(p.steps||[]).join(' '),(p.traps||[]).join(' '),p.templates,cat].filter(Boolean).join(' '),
       go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="project"]')?.click();
-              const btn=document.querySelector(`#projectSubtabs button[data-pj="${cat}"]`);btn&&btn.click();}
+              curPj=cat; renderProjectSubtabs(); renderProject();}
+    }));
+    (d.retros||[]).forEach(r=>idx.push({
+      kind:'项目·'+cat+'·复盘', label:r.title||'(无题)', sub:[r.date,r.did].filter(Boolean).join(' · ').slice(0,80),
+      hay:[r.title,r.did,r.result,(r.nextTime||[]).join(' '),cat].filter(Boolean).join(' '),
+      go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="project"]')?.click();
+              curPj=cat; renderProjectSubtabs(); renderProject();}
     }));
   });
   // 自媒体 · 选题
@@ -3677,9 +3944,11 @@ function initGlobalShortcuts(){
       if(opened.length){
         const top = opened[opened.length-1];
         top.classList.remove('on');
-        // 保持副作用一致（清 fileCtx / sourceCtx / editingIdeaId）
-        if(top.id==='fileModal') fileCtx=null;
+        // 保持副作用一致（清 ctx）
         if(top.id==='sourceModal') sourceCtx=null;
+        if(top.id==='insightModal') insightCtx=null;
+        if(top.id==='playbookModal') pbCtx=null;
+        if(top.id==='retroModal') retroCtx=null;
         if(top.id==='ideaModal') editingIdeaId=null;
         return;
       }
