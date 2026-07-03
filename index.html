@@ -216,6 +216,21 @@
   .ph-desc{font-size:13px;color:var(--ink-2);}
   .ph-desc.ph-empty{color:var(--ink-3);font-style:italic;}
   .ph-actions{display:flex;gap:6px;flex-shrink:0;}
+  /* v1.9 · 待办 */
+  .todo-input-row{display:flex;gap:8px;margin-bottom:14px;}
+  .todo-input-row input{flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:var(--serif);}
+  .todo-input-row input:focus{outline:none;border-color:var(--primary);}
+  .todo-list{display:flex;flex-direction:column;gap:4px;}
+  .todo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;}
+  .todo-item:hover{background:var(--bg-2);}
+  .todo-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;}
+  .todo-text{flex:1;font-size:14px;color:var(--ink);line-height:1.5;}
+  .todo-item.done .todo-text{text-decoration:line-through;color:var(--ink-3);}
+  .btn-del{background:none;border:none;color:var(--ink-3);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:0;transition:opacity .15s;}
+  .todo-item:hover .btn-del{opacity:1;}
+  .btn-del:hover{color:#C0392B;background:rgba(192,57,43,.08);}
+  .todo-done-section{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;}
+  .todo-done-section summary{font-size:13px;color:var(--ink-3);cursor:pointer;}
 
   /* Knowledge block */
   .know{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
@@ -508,11 +523,12 @@
   <!-- 工作 -->
   <section data-pane="work" class="hidden">
     <h1 class="page">工作</h1>
-    <div class="page-sub">行业站点 · 项目站点。刷新按钮不登录你的任何账号，只打开公开来源。</div>
+    <div class="page-sub">行业认知 · 项目方法论 · 待办事项。</div>
 
     <div class="subtabs" id="workSubtabs">
       <button data-work-tab="industry" class="active">行业站点</button>
       <button data-work-tab="project">项目站点</button>
+      <button data-work-tab="todos">待办</button>
     </div>
 
     <div data-work-pane="industry">
@@ -523,6 +539,10 @@
     <div data-work-pane="project" class="hidden">
       <div class="subtabs" id="projectSubtabs"></div>
       <div id="projectBody"></div>
+    </div>
+
+    <div data-work-pane="todos" class="hidden">
+      <div id="todosBody"></div>
     </div>
   </section>
 
@@ -980,7 +1000,8 @@ const seed = {
     project:{
       '正版IP':{desc:'IP 授权 · 联名 · 版权合作',playbooks:[],retros:[]},
       '联营计划':{desc:'联营招商 · 服务商 · 品牌孵化',playbooks:[],retros:[]},
-    }
+    },
+    todos:[]
   },
   media:{
     xhsHot:[
@@ -1431,7 +1452,8 @@ function syncIndustrySources(){
 function migrateWorkModel(){
   try{
     if(state.__work_model_ver === WORK_MODEL_VER) return;
-    state.work = state.work || {industry:{},project:{}};
+    state.work = state.work || {industry:{},project:{},todos:[]};
+    if(!Array.isArray(state.work.todos)) state.work.todos = [];
     state.__legacy_files_backup = state.__legacy_files_backup || {industry:{},project:{}};
     Object.keys(state.work.industry||{}).forEach(k=>{
       const it = state.work.industry[k]; if(!it) return;
@@ -2402,6 +2424,76 @@ function saveSource(){
 function delSource(kind,key,i){
   if(!confirm('删除这个来源？')) return;
   state.work.industry[key].sources.splice(i,1);save();renderIndustry();
+}
+
+/* ---- 待办 CRUD ---- */
+function ensureTodos(){ state.work.todos = state.work.todos || []; }
+function renderTodos(){
+  ensureTodos();
+  const box = document.getElementById('todosBody');
+  if(!box) return;
+  const pending = state.work.todos.filter(t=>!t.done);
+  const done    = state.work.todos.filter(t=>t.done);
+  box.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3>待办事项</h3>
+        <span class="pill">${pending.length} 项未完成</span>
+      </div>
+      <div class="todo-input-row">
+        <input id="todoInput" type="text" placeholder="输入待办，Enter 添加" onkeydown="if(event.key==='Enter')addTodo()" />
+        <button class="btn small" onclick="addTodo()">＋</button>
+      </div>
+      <div class="todo-list">
+        ${pending.map((t,i)=>`
+          <label class="todo-item" data-idx="${state.work.todos.indexOf(t)}">
+            <input type="checkbox" onchange="toggleTodo(${state.work.todos.indexOf(t)})" />
+            <span class="todo-text">${escape(t.title)}</span>
+            <button class="btn-del" onclick="event.preventDefault();delTodo(${state.work.todos.indexOf(t)})" title="删除">×</button>
+          </label>
+        `).join('')||'<div class="empty" style="padding:20px 0;">没有待办 — 清爽的一天。</div>'}
+      </div>
+      ${done.length ? `
+        <details class="todo-done-section">
+          <summary>已完成（${done.length}）</summary>
+          <div class="todo-list done">
+            ${done.map(t=>`
+              <label class="todo-item done" data-idx="${state.work.todos.indexOf(t)}">
+                <input type="checkbox" checked onchange="toggleTodo(${state.work.todos.indexOf(t)})" />
+                <span class="todo-text">${escape(t.title)}</span>
+                <button class="btn-del" onclick="event.preventDefault();delTodo(${state.work.todos.indexOf(t)})" title="删除">×</button>
+              </label>
+            `).join('')}
+          </div>
+          <button class="btn small ghost" style="margin-top:8px;" onclick="clearDoneTodos()">清空已完成</button>
+        </details>
+      ` : ''}
+    </div>
+  `;
+}
+function addTodo(){
+  const inp = document.getElementById('todoInput');
+  const title = (inp.value||'').trim(); if(!title) return;
+  ensureTodos();
+  state.work.todos.unshift({id:uid('td'),title,done:false,ts:Date.now()});
+  save(); inp.value=''; renderTodos();
+}
+function toggleTodo(i){
+  ensureTodos();
+  const t = state.work.todos[i]; if(!t) return;
+  t.done = !t.done;
+  t.doneAt = t.done ? Date.now() : null;
+  save(); renderTodos();
+}
+function delTodo(i){
+  ensureTodos();
+  state.work.todos.splice(i,1); save(); renderTodos();
+}
+function clearDoneTodos(){
+  if(!confirm('清空所有已完成的待办？')) return;
+  ensureTodos();
+  state.work.todos = state.work.todos.filter(t=>!t.done);
+  save(); renderTodos();
 }
 
 /* ========================================================================
@@ -3882,6 +3974,7 @@ function initAll(){
   renderProjectSubtabs();
   renderIndustry();
   renderProject();
+  renderTodos();
   renderMediaSources();renderIdeas();
   renderMysticKnowledge();renderFate();renderFateLens();
   renderWenwan();
@@ -3949,6 +4042,12 @@ function cmdkBuildIndex(){
     kind:'自媒体·选题', label:i.title||i.hook||'(无题)', sub:[i.plat,i.prio,i.tag].filter(Boolean).join(' · '),
     hay:[i.title,i.hook,i.plat,i.tag,i.note].filter(Boolean).join(' '),
     go:()=>{switchPane('media');setTimeout(()=>document.getElementById('ideasList')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}
+  }));
+  // 工作 · 待办
+  ((state.work&&state.work.todos)||[]).filter(t=>!t.done).forEach(t=>idx.push({
+    kind:'工作·待办', label:t.title, sub:'未完成',
+    hay:[t.title].filter(Boolean).join(' '),
+    go:()=>{switchPane('work');document.querySelector('#workSubtabs button[data-work-tab="todos"]')?.click();}
   }));
   // 自媒体 · 热榜（小红书 / 抖音）
   ((state.media&&state.media.xhsHot)||[]).forEach(h=>idx.push({
