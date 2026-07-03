@@ -2449,12 +2449,12 @@ function renderTodos(){
       </div>
       <div class="todo-list">
         ${pending.map((t,i)=>{const idx=state.work.todos.indexOf(t);return `
-          <label class="todo-item" data-idx="${idx}">
+          <div class="todo-item" data-idx="${idx}">
             <input type="checkbox" onchange="toggleTodo(${idx})" />
             <span class="todo-text" ondblclick="event.preventDefault();editTodo(${idx})">${escape(t.title)}</span>
             <button class="btn-edit" onclick="event.preventDefault();editTodo(${idx})" title="编辑">✎</button>
             <button class="btn-del" onclick="event.preventDefault();delTodo(${idx})" title="删除">×</button>
-          </label>
+          </div>
         `;}).join('')||'<div class="empty" style="padding:20px 0;">没有待办 — 清爽的一天。</div>'}
       </div>
       ${done.length ? `
@@ -2462,11 +2462,11 @@ function renderTodos(){
           <summary>已完成（${done.length}）</summary>
           <div class="todo-list done">
             ${done.map(t=>`
-              <label class="todo-item done" data-idx="${state.work.todos.indexOf(t)}">
+              <div class="todo-item done" data-idx="${state.work.todos.indexOf(t)}">
                 <input type="checkbox" checked onchange="toggleTodo(${state.work.todos.indexOf(t)})" />
                 <span class="todo-text">${escape(t.title)}</span>
                 <button class="btn-del" onclick="event.preventDefault();delTodo(${state.work.todos.indexOf(t)})" title="删除">×</button>
-              </label>
+              </div>
             `).join('')}
           </div>
           <button class="btn small ghost" style="margin-top:8px;" onclick="clearDoneTodos()">清空已完成</button>
