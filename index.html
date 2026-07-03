@@ -243,6 +243,9 @@
   .book-title{margin-top:10px;font-size:13px;color:var(--ink);line-height:1.4;text-align:center;font-family:var(--serif);padding:0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .book-author{margin-top:2px;font-size:11px;color:var(--ink-3);text-align:center;}
   .book-quotes-count{margin-top:2px;font-size:11px;color:var(--accent-2);text-align:center;}
+  .book-pending{position:absolute;top:6px;left:6px;background:rgba(180,140,80,0.85);color:#fff;border-radius:6px;padding:1px 6px;font-size:10px;letter-spacing:0.5px;}
+  .book-cat{display:inline-block;background:var(--bg-2);color:var(--ink-3);border-radius:6px;padding:1px 6px;font-size:10px;margin-left:4px;}
+  .pill-pending{background:#F3E7CE!important;color:#8a6a2b!important;}
   .book-add{border:2px dashed var(--line);border-radius:6px;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;transition:all .15s;font-size:32px;font-weight:200;background:transparent;}
   .book-add:hover{border-color:var(--accent);color:var(--accent);background:#FFFDF7;}
   .book-add-label{text-align:center;font-size:12px;color:var(--ink-3);margin-top:10px;}
@@ -455,6 +458,10 @@
         <button class="chip" data-st="已读" onclick="filterBooks('已读',this)">已读</button>
         <button class="chip" data-st="想读" onclick="filterBooks('想读',this)">想读</button>
         <input class="search" id="bSearch" oninput="renderShelf()" placeholder="搜书名 / 作者" />
+      </div>
+      <div class="filter-bar" style="margin-top:6px;">
+        <input class="search" id="bQuickTitle" style="flex:1;" placeholder="只填书名快速加书（Enter 保存，其他字段之后由 Q 补全）" onkeydown="if(event.key==='Enter'){quickAddBook();}" />
+        <button class="btn small" onclick="quickAddBook()">＋ 快速加</button>
       </div>
       <div id="shelfGrid" class="shelf-grid"></div>
     </div>
@@ -892,6 +899,7 @@ const seed = {
     {id:'b48',title:'《金刚经》说什么',author:'南怀瑾',cover:'https://cdn.weread.qq.com/weread/cover/87/YueWen_22791651/t6_YueWen_22791651.jpg',reader:'https://weread.qq.com/web/reader/e5832360715bc5e3e581083',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
     {id:'b49',title:'俗女养成记（同名影视原著）',author:'江鹅',cover:'https://cdn.weread.qq.com/weread/cover/90/3300011890/t6_3300011890.jpg',reader:'https://weread.qq.com/web/reader/d2932250813ab6b25g010b64',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
     {id:'b50',title:'桃花源没事儿',author:'',cover:'https://cdn.weread.qq.com/weread/cover/13/cpplatform_3gn7abh5vn4enmll5zfhai/t6_cpplatform_3gn7abh5vn4enmll5zfhai1756264952.jpg',reader:'https://weread.qq.com/web/reader/676320b0813aba52cg0179ad',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
+    {id:'b51',title:'毛选里的顶级方法论：年轻人的第一本问题解决手册',author:'王明',cover:'',reader:'',status:'想读',progress:0,coreView:'',note:'',ts:Date.now()},
   ],
   quotes: [
     {id:'q1',text:'把脑子里乱七八糟的想法，变成有结构的文字。不管有没有人看，写完了，我就比昨天更清楚了一点。',book:'又是一年618（公众号自摘）',author:'互联网女英雄',topic:'成长',note:'我的写作原点，贴给自己每天看一眼。',bookId:null,ts:Date.now()},
@@ -1255,6 +1263,87 @@ function migrateMiaoFateReading(){
     }
   }catch(e){console.warn('migrateMiaoFateReading',e);}
 }
+
+/* ================================================================
+   书架 · 核心观点批量回填（v1.7 引入）
+   由 Q 给每本书写一段 category + coreView；工具/思想类走要点、
+   文学/散文/传记走意象。已有 coreView 的书不覆盖。
+================================================================ */
+const BOOK_CORE_VIEWS = {
+  b1:{cat:'时评',view:'[要点]· 日本"失去的三十年"不是躺平，而是全社会资产负债表被动收缩\n· 通缩下的年轻人不谈涨薪，谈"体面存活"——低欲望不是选择是结构\n· 房地产泡沫破裂后最先受伤的是中产的"未来预期"，不是现金\n· 中国若走同一条路，个人要做的是：早现金流、少杠杆、多技能'},
+  b2:{cat:'工具·玄学',view:'[要点]· 从天干地支入门，再到十神、五行生克、大运流年\n· 命理三步走：定日主 → 看格局 → 判喜忌\n· 别用命去做绝对判断，用来看结构性倾向和时机窗\n· 手把手是它的优点，学完能自己起盘做基本解读'},
+  b3:{cat:'思想',view:'[要点]· 矛盾论：任何事物都有主要矛盾和次要矛盾，抓主要\n· 实践论：认识来自实践，再回到实践检验——反对本本主义\n· 论持久战：分析战争阶段与力量对比，别急也别怕\n· 群众路线：从群众中来到群众中去，别拍脑袋'},
+  b4:{cat:'禅·思想',view:'[意象]铃木俊隆写给美国人的禅——不是深山打坐，是"扫地时就好好扫地"。初心不是新手的心，是每次都当第一次做的心：没有预设、没有比较、没有"我懂了"的傲慢。他反复说，坐禅本身没意义，"你以为在修行"就已经错了。\n\n金句：「初心里，可能性很多；专家心里，可能性很少。」'},
+  b5:{cat:'生活',view:'[意象]书里列出 100 件"死前想做的事"，从"跟父母来一次不带手机的旅行"到"公开发表一次演讲"。真正的价值不在清单本身，而在你逐条读下去时，心里那些"想""不想"的直觉反应——那才是你真正想要的生活轮廓。\n\n金句：「遗愿清单的意义，是让你在还有时间的时候做决定。」'},
+  b6:{cat:'禅·生活',view:'[意象]作者用最日常的巧克力、咖啡、走路，讲禅在生活里的模样。不需要打坐、诵经、上山，你在吃一块巧克力时把它当唯一的事——那一刻就是禅。适合睡前读两页的调息之书。\n\n金句：「专心吃一块巧克力，比读一百本禅书更接近禅。」'},
+  b7:{cat:'通俗史',view:'[要点]· 视角新：从"人"的角度看历史事件，不做课本式概括\n· 张玮做过体育记者，笔法带故事性，一次读一篇不费劲\n· 每章都有"你以为的历史"vs"真实的细节"的落差感\n· 适合作为消遣读物+聊天素材库，全 7 册值得囤一份'},
+  b8:{cat:'投资',view:'[要点]· 富足公式：终身节俭 + 稳定收入 + 全指数基金 + 时间\n· 别选个股，选低费率的宽基指数（如 VTSAX）\n· 学会"F-you money"——攒够 25 倍年支出，就能对任何工作说不\n· 越简单越有效；策略越复杂，越容易被自己毁掉'},
+  b9:{cat:'生活',view:'[意象]关于一个人生活的正名书。独居不是过渡期，不是没找到对象前的将就——它是一种可以持续一生的生活形态。作者用日常细节（一个人吃饭、一个人搬家、一个人过节）解构"必须结婚"的社会脚本。\n\n金句：「一个人过日子的能力，是所有关系的前提。」'},
+  b10:{cat:'通俗史',view:'[要点]· 大历史（王朝、战争）与小历史（一顿饭、一次告别）交织\n· 关注"小人物在大时代里的选择"——比正史更真实\n· 读法：不必按顺序，随手翻一篇就是一顿加餐\n· 是历史的另一种打开方式，去掉了教科书的严肃'},
+  b11:{cat:'生活·成长',view:'[意象]写给"总觉得自己格格不入"的人的一本书。独特不是要向外证明的东西，是可以静静守护的东西。你不需要被所有人理解，你只需要被一小群人真正看见。\n\n金句：「合群是本能，独特是选择。」'},
+  b12:{cat:'思想',view:'[要点]· 智识分子的自我修养：用"科学思维"框架看社会现象\n· 反对情绪化站队，主张先看数据再谈立场\n· 提炼了 2020s 的关键议题：AI、内卷、代际、认知偏误\n· 万维钢的价值是"翻译"：把学术论文的洞察译成普通人能用的话'},
+  b13:{cat:'传记·工具',view:'[要点]· 领导力三原则：乐观、勇气、决心——被反复验证\n· 战略决策做法：先想"5 年后回头看，会不会后悔没做"\n· 大公司创新：不是砸钱做新东西，是收购+尊重优秀创造者（皮克斯/漫威/卢卡斯）\n· 谈判之前先弄清"对方真正在意的东西"，别只算钱'},
+  b14:{cat:'历史小说',view:'[意象]秦朝小县吏的成长史。作者是历史科班，考据严谨，但笔下的秦不是暴秦符号，而是一个个有血有肉的基层官吏。他们在律法与人情之间反复权衡，那才是历史真正的褶皱。\n\n金句：「王朝更迭是天上的事，做吏的只管把眼前这案办明白。」'},
+  b15:{cat:'历史小说',view:'[意象]茅盾文学奖作品，写北宋覆亡的四卷长卷。人物众多、笔力雄厚，把靖康之耻的前因后果一点点铺开。读它需要耐心，但读完你对"一个朝代是怎么亡的"会有全新的、非教科书的理解。\n\n金句：「金瓯有缺，人心先缺。」'},
+  b16:{cat:'社会学',view:'[要点]· 田野方法：作者在赌场里做了长期观察和访谈\n· 澳门博彩业不只是"赌"，它是一整套劳动、身份、地缘的系统\n· 荷官、赌客、庄家背后各有生存逻辑\n· 是了解港澳社会的一把钥匙，也是社会学写作的样本'},
+  b17:{cat:'工具',view:'[要点]· 从提示词入门到内容号变现的最短路径\n· 主要方法：AI 写作+分发、AI 制图/短视频剪辑、AI 咨询定制\n· 门槛：会打字就行，关键是选对赛道和坚持发\n· 具体度高但时效性强，实操前请对着最新工具核对一遍'},
+  b18:{cat:'玄学',view:'[要点]· 周易不是算命书，是一套用符号讲变化规律的哲学\n· 六十四卦的核心：位、时、中——每卦都在讲这三样\n· 读法：先记住"元亨利贞"四德，再一卦一卦体会\n· 适合入门；进阶后可以配合《易经》原文和南怀瑾讲义'},
+  b19:{cat:'社会',view:'[要点]· 中国基层：县、乡、村三级如何真实运转\n· 关键角色：书记、村主任、"能人"，以及被忽视的妇女干部\n· 政策从中央到基层的层层"变形"，是好事也是坏事\n· 读完你就理解为什么"中央文件"和"基层执行"永远有落差'},
+  b20:{cat:'生活',view:'[意象]书名就是全部——把注意力收回到今天下午和方圆 5 公里以内，其他的暂时放一放。焦虑大多来自把"未来所有可能的坏"和"世界所有远处的糟"都装进了当下的脑子里。\n\n金句：「专注此刻能做的事，是对未来最负责任的方式。」'},
+  b21:{cat:'工具',view:'[要点]· 能量管理比时间管理更重要——精力分四层：体能/情感/思维/精神\n· 顶级运动员的秘密：不是训练更多，是恢复更好\n· 建立"仪式"：让重要行为自动化，别靠意志力\n· 定期做"能量审计"：哪些事在给你充电？哪些在耗你？'},
+  b22:{cat:'工具',view:'[要点]· 观察九个维度：言语、表情、姿态、习惯、朋友圈、消费、决策、待人、独处\n· 别用"聪明""老实"这种模糊标签，用具体行为下判断\n· 短时间识人：看他怎么对服务员，比看他怎么对老板准\n· 识人的终点不是审判别人，是校准自己'},
+  b23:{cat:'社会·工具',view:'[要点]· "隐形家务"清单：策划、协调、情绪劳动，占家务的一半但看不见\n· 家务分工的死结：不是懒，是"看不见的都不算劳动"\n· 解法：把家务写成清单，逐项分工——把隐形显性化\n· 适合两口子一起读；单身也能用来审视自己的家庭系统'},
+  b24:{cat:'工具',view:'[要点]· 4 天速通法：读招股书 → 看行业协会数据 → 访 3 位从业者 → 画产业链\n· 抓 3 个关键词：谁付钱、钱怎么走、瓶颈在哪\n· 别急着看新闻，新闻是滞后指标\n· 每了解一个行业，就在笔记里留一张"产业链地图"'},
+  b25:{cat:'散文',view:'[意象]博物君张辰亮的散文集。写虫、写花、写吃、写胡同里长大的日子，笔法散淡不用力。适合睡前翻两篇，看完不"学到什么"，但心里那根紧的弦会松一点。\n\n金句：「一件事能让你想起小时候，就值得写一写。」'},
+  b26:{cat:'文学',view:'[意象]用九位诗人的心境，写暗夜里的文学启明。屈原、杜甫、李商隐、苏轼——他们不是课本里的伟人，是在自己那个当下同样活得辛苦的人。你会在他们的诗里，重新认领自己现在的那点难。\n\n金句：「诗不是慰藉，是让你敢直面深夜的那盏灯。」'},
+  b27:{cat:'科普·工具',view:'[要点]· 多巴胺让你"想要"，不让你"快乐"——两个系统在大脑里是分离的\n· 短视频、糖、社交媒体：都在过度刺激多巴胺，透支未来的快乐\n· 解法：主动引入"延迟满足"——每天有一段"没有屏幕的时间"\n· 快乐不是加法，是减法：减掉噪音，快乐就露出来了'},
+  b28:{cat:'思想',view:'[要点]· 印刷时代培养的是"深度思考"，电视时代培养的是"娱乐消费"\n· 严肃议题（政治、教育、宗教）一旦被娱乐化就失去公共性\n· 波兹曼 1985 年的预言，在短视频时代应验得吓人\n· 读法：把书里"电视"替换成"抖音"，每一段都是当下'},
+  b29:{cat:'玄学',view:'[要点]· 从"野心"角度重看周易：它不只是占卜，是一套雄心勃勃的世界观\n· 每一卦都可以对应人生的一种野心与其代价\n· 通俗版讲法，适合已经翻过入门书之后的第二本\n· 别把它读成成功学，它的核心是"知止"而不是"扩张"'},
+  b30:{cat:'玄学',view:'[要点]· 命运可以算吗？——书里给的答案是"能算大势，不能算具体"\n· 定数与变数：八字定命，风水改运，德行转命\n· 破除迷信版本的算命，回到哲学层面理解命理\n· 适合和《周易说什么》配对读'},
+  b31:{cat:'生活',view:'[意象]关于回到日本乡村种地的一年记。作者不是浪漫化"归园田居"，她诚实地写累、写虫子、写卖不出去菜的沮丧。但也写土地给她的那种"我的日子是我自己在过"的踏实。适合被城市生活挤压时读。\n\n金句：「种地不是逃避，是把生活缩到自己能负责的尺寸。」'},
+  b32:{cat:'思想·入门',view:'[要点]· 用生活化案例讲清楚 10 位哲学家的核心洞察\n· 苏格拉底、康德、尼采、萨特——每人一章，配一段真实场景\n· 读它不为考试，为的是遇到烦心事时多一个"想问题的角度"\n· 适合送给不看哲学书的朋友，或者你自己的入门第一本'},
+  b33:{cat:'工具',view:'[要点]· 封面 80% 决定点开率——先解决封面，再解决内容\n· 标题公式：矛盾 + 具体 + 情绪，三选二就有戏\n· 内容三层：钩子、干货、行动指令\n· 涨粉靠系列化，变现靠标签精准——两件事别混'},
+  b34:{cat:'家教·工具',view:'[要点]· 财富观：钱是种子，不是果实；花钱要问"能否长出更多"\n· 竞争观：别怕对手强，怕自己不知道自己弱在哪\n· 时间观：每一天都要有目的地过——"没有目标的忙碌是浪费"\n· 关系观：友谊是最大的商业资产，选对人比努力重要'},
+  b35:{cat:'投资',view:'[要点]· 本分：只做自己看得懂的生意\n· 平常心：股价不是判断依据，商业模式和企业文化才是\n· 长期主义：找到伟大公司就一直拿着，别追涨杀跌\n· 段的核心：先做减法，能不投的都不投；剩下的重仓'},
+  b36:{cat:'情感',view:'[意象]关于长期关系里那种"淡了"的状态。作者不劝你死撑，也不劝你分手——她说，先允许爱情有周期，允许它消失、再允许它换一种形态回来。爱情不是恒温的，它是季节。\n\n金句：「爱情消失了，不代表爱消失了。」'},
+  b37:{cat:'关系·工具',view:'[要点]· 五种语言：肯定的言辞、精心的时刻、接受礼物、服务的行动、身体的接触\n· 每个人有主要"爱语"——你用错了语种，对方感受不到爱\n· 找出自己和伴侣的爱语，是关系里最省力的一次投入\n· 也适用于亲子、朋友、同事关系'},
+  b38:{cat:'文学',view:'[意象]二十世纪初纽约布鲁克林一个穷姑娘的成长史。父亲酗酒早逝、母亲辛劳、弟妹嗷嗷待哺，但书里没有一丝苦情——只有一个女孩子如何在贫穷里保住自己的想象力、尊严、和读书的胃口。\n\n金句：「活着，奋斗，爱，然后死去，就是这样。」'},
+  b39:{cat:'未来学',view:'[要点]· 从技术、能源、生物、社会四个维度推演到 2049\n· 关键变量：AI 通用化、聚变发电、生殖医学、气候临界点\n· 未来不是线性外推，是"S 曲线叠加 S 曲线"\n· 读它不为预测准确，为的是习惯"用长视角想问题"'},
+  b40:{cat:'回忆录',view:'[意象]汪曾祺、朱自清、闻一多们的西南联大记忆。在贫穷、轰炸、颠沛的年代里，一群人硬是把大学办成了黄金时代。读它不为怀旧，为的是提醒自己：条件从来不是决定学问和精神的关键。\n\n金句：「有教授、有学生、有想读的书，其他都是次要的。」'},
+  b41:{cat:'思想',view:'[要点]· 孙子兵法核心不是"打赢"，是"不打就赢"和"以少胜多"\n· 五事七计：道天地将法，庙算先胜再战\n· 最反直觉的一条：善战者无智名无勇功——真高手都平平无奇\n· 用在职场、创业、关系里都通用；打仗只是其中一个场景'},
+  b42:{cat:'传记',view:'[意象]杨振宁不只是"诺贝尔物理学奖得主"，他是一个把中国科学家形象重新写进世界史册的人。书里既有他与李政道合作与决裂的物理内幕，也有他晚年回国的争议与担当。你会看到一个人如何用一辈子去证明"规范与对称"既是物理也是人生。\n\n金句：「宁拙毋巧，宁朴毋华。」'},
+  b43:{cat:'文学',view:'[意象]阿城的三王，写文革下乡的三个青年——一个下棋、一个护树、一个教书。文字极简，情绪极深。他不写苦难，只写在苦难里那些"人还是要做点自己认的事"的执拗。是当代汉语里最好的白话之一。\n\n金句：「不做点事儿，就白活了。」'},
+  b44:{cat:'散文',view:'[意象]汪曾祺写吃、写花、写祖父、写高邮的鸭蛋，笔下每样东西都自带温度。他的功夫是"把最普通的东西写得让你想去一趟"。读汪曾祺的最大好处，是重新相信生活值得留心。\n\n金句：「一日不作，一日不食；但求日日心安。」'},
+  b45:{cat:'生活·女性',view:'[意象]写给"总是当配角的人"的一本书。作者说，你的人生要有一个主场——那个你可以完全按自己意愿做事的场域。它可以小，但必须真实存在。当你有了主场，别的场域你就能从容当客场。\n\n金句：「先有主场，再有自我。」'},
+  b46:{cat:'通俗史',view:'[要点]· 用小说笔法讲完整个明朝 276 年\n· 读法轻松，但内里对权力、人性的洞察不轻\n· 最好看的部分：张居正、王阳明、崇祯——三种"知不可为而为"的样本\n· 读完你会对"个人在历史中的位置"有截然不同的看法'},
+  b47:{cat:'投资',view:'[要点]· 段永平在雪球等平台的问答合集，属于"半白话哲学书"\n· 核心还是那四条：本分、平常心、能力圈、长期主义\n· 一问一答的形式，比《段永平投资实战》更适合日常翻\n· 别当"抄作业"读，段自己反复强调"抄不了"'},
+  b48:{cat:'思想·佛',view:'[要点]· 金刚经核心：无我、无相、无住——三无是钥匙\n· 南怀瑾用现代生活的例子讲，不需要佛学基础\n· "应无所住而生其心"——不是不做事，是做事时不被结果绑架\n· 读法：一次一段，配合自己的生活情境慢慢琢磨'},
+  b49:{cat:'文学',view:'[意象]台湾女作家写自己从"被期待的乖女儿"变成"活成自己样子的俗女"的过程。没有大道理，只有几十件小事——从祖母的抽屉、初中的家政课、到 40 岁的辞职。她证明"俗"也是一种自由。\n\n金句：「活成自己的样子，才是真的养成。」'},
+  b50:{cat:'生活·散文',view:'[意象]书名就是全部——退一步，去自己的桃花源里待着，天塌不下来。作者用几十个短篇散文的方式，讲"没事儿"这三个字的力量：不是躺平，是从"我必须搞定一切"的紧绷里松一松。\n\n金句：「不是所有事都需要你去搞定。」'},
+  b51:{cat:'思想·工具',view:'[要点]· 一切从实际出发：先看清楚是什么，别急着说该怎样\n· 抓主要矛盾：任何复杂局面都有一个"牵一发动全身"的点\n· 调查研究：没有调查就没有发言权——对生活、工作、感情都成立\n· 持久战思维：短期看不到成果的事，用"阶段论"给自己坚持的理由'},
+};
+const BOOK_CV_VER = 'v1.7-batch';
+function migrateBookCoreView(){
+  try{
+    if(!Array.isArray(state.books)) return;
+    let changed = false;
+    state.books.forEach(b=>{
+      const seedEntry = BOOK_CORE_VIEWS[b.id];
+      if(seedEntry){
+        // 已有用户手写的 coreView 就不覆盖；只在为空时回填
+        if(!b.coreView || !b.coreView.trim()){ b.coreView = seedEntry.view; changed = true; }
+        if(!b.category){ b.category = seedEntry.cat; changed = true; }
+        if(!b.coreStatus){ b.coreStatus = 'done'; changed = true; }
+      }else{
+        // 用户自己新加的书（没在 seed map 里）：如果 coreView 为空就打上 pending 标
+        if((!b.coreView || !b.coreView.trim()) && !b.coreStatus){ b.coreStatus = 'pending'; changed = true; }
+      }
+    });
+    // 版本号一次性打上；将来若再升级批次，可以 bump 版本号触发局部重写
+    if(state.__book_cv_ver !== BOOK_CV_VER){ state.__book_cv_ver = BOOK_CV_VER; changed = true; }
+    if(changed) save();
+  }catch(e){console.warn('migrateBookCoreView',e);}
+}
 function save(){
   state.meta = state.meta || {};
   state.meta.updatedAt = Date.now();
@@ -1379,14 +1468,18 @@ function renderShelf(){
   const box = document.getElementById('shelfGrid');
   const cards = list.map(b=>{
     const qCount = (state.quotes||[]).filter(q=>q.bookId===b.id).length;
+    const pending = (b.coreStatus==='pending') || (!b.coreView||!b.coreView.trim());
+    const pendingPill = pending?`<div class="book-pending">待补全</div>`:'';
+    const catPill = b.category?`<div class="book-cat">${escape(b.category)}</div>`:'';
     return `
       <div class="book-card" onclick="openBookDetail('${b.id}')">
         <div class="${coverWrapClass(b)}" style="${coverStyle(b)}">
           ${b.cover?`<img src="${escape(b.cover)}" alt="" onerror="this.parentElement.classList.add('gen');this.parentElement.style.setProperty('--gen-a','${coverColors(b.title)[0]}');this.parentElement.style.setProperty('--gen-b','${coverColors(b.title)[1]}');this.style.display='none';this.parentElement.innerHTML+='<div class=\\'gen-title\\'>${escape(b.title)}</div>'"/>`:`<div class="gen-title">${escape(b.title)}</div>`}
           ${statusBadge(b.status)}
+          ${pendingPill}
         </div>
         <div class="book-title">${escape(b.title)}</div>
-        <div class="book-author">${escape(b.author||'')}</div>
+        <div class="book-author">${escape(b.author||'')} ${catPill}</div>
         ${qCount?`<div class="book-quotes-count">${qCount} 条划线</div>`:''}
       </div>`;
   }).join('');
@@ -1436,16 +1529,39 @@ function saveBook(){
     note:document.getElementById('bNote').value.trim(),
     ts:Date.now(),
   };
+  // 手动填了 coreView 就标 done，否则维持之前状态或标 pending
+  if(obj.coreView) obj.coreStatus='done';
   if(!state.books) state.books=[];
   if(editingBookId){
     const i = state.books.findIndex(x=>x.id===editingBookId);
     state.books[i]={...state.books[i],...obj};
+    if(!obj.coreView && !state.books[i].coreStatus) state.books[i].coreStatus='pending';
   }else{
     obj.id='b_'+Date.now();
+    if(!obj.coreView) obj.coreStatus='pending';
     state.books.unshift(obj);
   }
   save();closeModal('bookModal');renderShelf();
   if(editingBookId) openBookDetail(editingBookId);
+}
+// 只填名字快速加书：其他字段留待 Q 稍后补全
+function quickAddBook(){
+  const el = document.getElementById('bQuickTitle');
+  const title = (el.value||'').trim();
+  if(!title){el.focus();return;}
+  if(!state.books) state.books=[];
+  const obj={
+    id:'b_'+Date.now(),
+    title,
+    author:'',cover:'',publisher:'',year:'',
+    status:'想读',progress:0,coreView:'',note:'',
+    coreStatus:'pending',
+    ts:Date.now(),
+  };
+  state.books.unshift(obj);
+  save();
+  el.value='';
+  renderShelf();
 }
 function delBook(id){
   const qCount = (state.quotes||[]).filter(q=>q.bookId===id).length;
@@ -1478,6 +1594,8 @@ function openBookDetail(id){
         <div class="bd-meta">
           <span class="pill">${escape(b.status||'—')}</span>
           <span class="pill">进度 ${b.progress||0}%</span>
+          ${b.category?`<span class="pill">${escape(b.category)}</span>`:''}
+          ${(b.coreStatus==='pending')?`<span class="pill pill-pending">待 Q 补全</span>`:''}
           <br>
           ${escape(b.author||'—')} · ${escape(b.publisher||'')} ${escape(b.year||'')}
         </div>
@@ -1486,7 +1604,7 @@ function openBookDetail(id){
           <h4>核心观点
             <button class="btn small ghost" onclick="askAISummary('${b.id}')">✧ 让 Q 帮我总结</button>
           </h4>
-          <div class="core ${b.coreView?'':'empty-core'}">${b.coreView?escape(b.coreView):'还没填。可以自己写，也可以点右上角"让 Q 帮我总结"——我会用你贴过来的划线在下一轮对话里生成总结再写回这里。'}</div>
+          <div class="core ${b.coreView?'':'empty-core'}">${b.coreView?escape(b.coreView):(b.coreStatus==='pending'?'这本书还没补全。跟 Q 说一声「补全「'+escape(b.title)+'」」，我会给它写好 category + 核心观点。':'还没填。可以自己写，也可以点右上角"让 Q 帮我总结"——我会用你贴过来的划线在下一轮对话里生成总结再写回这里。')}</div>
           ${b.note?`<h4 style="margin-top:14px;">我的备注</h4><div class="core">${escape(b.note)}</div>`:''}
         </div>
 
@@ -3367,6 +3485,7 @@ function initAll(){
   setToday();
   migrateFateAuto();
   migrateMiaoFateReading();
+  migrateBookCoreView();
   renderShelf();
   renderQuotes();
   renderIndustry();
